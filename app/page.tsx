@@ -575,7 +575,7 @@ export default function Home() {
                     ),
                   )
                 }
-                className="h-2 w-full cursor-pointer touch-manipulation appearance-none rounded-full bg-[#e7ece8] accent-[#2f776a] [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-[#2f776a] [&::-moz-range-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-[#2f776a] [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)]"
+                className="h-2 w-full cursor-pointer touch-none appearance-none rounded-full bg-[#e7ece8] accent-[#2f776a] [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-[#2f776a] [&::-moz-range-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-[#2f776a] [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)]"
               />
             </label>
           ))}
