@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 
 type Locale = 'uz' | 'en' | 'ru';
@@ -444,7 +443,6 @@ export default function Home() {
     }),
     [hydrated, setHydrated] = useState(false);
   const t = copy[locale],
-    displayScores = useMemo(() => scores.map((s) => Math.round(s)), [scores]),
     labels = useMemo(
       () => [
         t.health,
@@ -464,7 +462,7 @@ export default function Home() {
       [t.goals, Target, 'goals'],
       [t.reviews, RefreshCw, 'reviews'],
     ] as const,
-    weakest = displayScores.indexOf(Math.min(...displayScores)),
+    weakest = scores.indexOf(Math.min(...scores)),
     currentGoal = goals.find((g) => g.id === selectedGoal);
   useEffect(() => {
     try {
@@ -555,33 +553,36 @@ export default function Home() {
         </button>
       </div>
       <div className="grid items-center gap-4 p-5 md:grid-cols-2 md:p-7">
-        <LifeWheel labels={labels} scores={displayScores} />
+        <LifeWheel labels={labels} scores={scores} />
         <div className="grid grid-cols-2 gap-x-5 gap-y-3">
           {labels.map((l, i) => (
-            <div key={l}>
+            <label key={l}>
               <span className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-500">
                 <span>{l}</span>
-                <b>{displayScores[i]}</b>
+                <b>{scores[i]}</b>
               </span>
-              <Slider
+              <input
                 aria-label={l}
-                min={1}
-                max={10}
-                step={0.01}
-                value={[scores[i]]}
-                onValueChange={(v) => {
-                  const next = Array.isArray(v) ? v[0] : v;
-                  setScores(scores.map((s, n) => (n === i ? next : s)));
-                }}
-                className="py-1.5"
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={scores[i]}
+                onChange={(e) =>
+                  setScores(
+                    scores.map((s, n) =>
+                      n === i ? Number(e.target.value) : s,
+                    ),
+                  )
+                }
+                className="h-2 w-full cursor-pointer touch-manipulation appearance-none rounded-full bg-[#e7ece8] accent-[#2f776a] [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-[#2f776a] [&::-moz-range-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-[#2f776a] [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)]"
               />
-            </div>
+            </label>
           ))}
           <Button
             className="col-span-2 mt-2 bg-[#2f776a]"
             onClick={() => {
-              setSavedScores(displayScores);
-              setScores(displayScores);
+              setSavedScores(scores);
               notify(t.assessmentSaved);
             }}
           >
@@ -830,13 +831,13 @@ export default function Home() {
                   <div className="rounded-2xl border bg-white p-5">
                     <small>{t.avg}</small>
                     <b className="mt-2 block text-2xl">
-                      {(displayScores.reduce((a, b) => a + b, 0) / 8).toFixed(1)}
+                      {(scores.reduce((a, b) => a + b, 0) / 8).toFixed(1)}
                     </b>
                   </div>
                   <div className="rounded-2xl border bg-white p-5">
                     <small>{t.weakest}</small>
                     <b className="mt-2 block text-2xl">
-                      {labels[weakest]} · {displayScores[weakest]}/10
+                      {labels[weakest]} · {scores[weakest]}/10
                     </b>
                   </div>
                 </div>
