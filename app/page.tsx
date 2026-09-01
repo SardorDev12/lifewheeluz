@@ -444,6 +444,7 @@ export default function Home() {
     }),
     [hydrated, setHydrated] = useState(false);
   const t = copy[locale],
+    displayScores = useMemo(() => scores.map((s) => Math.round(s)), [scores]),
     labels = useMemo(
       () => [
         t.health,
@@ -463,7 +464,7 @@ export default function Home() {
       [t.goals, Target, 'goals'],
       [t.reviews, RefreshCw, 'reviews'],
     ] as const,
-    weakest = scores.indexOf(Math.min(...scores)),
+    weakest = displayScores.indexOf(Math.min(...displayScores)),
     currentGoal = goals.find((g) => g.id === selectedGoal);
   useEffect(() => {
     try {
@@ -554,19 +555,19 @@ export default function Home() {
         </button>
       </div>
       <div className="grid items-center gap-4 p-5 md:grid-cols-2 md:p-7">
-        <LifeWheel labels={labels} scores={scores} />
+        <LifeWheel labels={labels} scores={displayScores} />
         <div className="grid grid-cols-2 gap-x-5 gap-y-3">
           {labels.map((l, i) => (
             <div key={l}>
               <span className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-500">
                 <span>{l}</span>
-                <b>{scores[i].toFixed(1)}</b>
+                <b>{displayScores[i]}</b>
               </span>
               <Slider
                 aria-label={l}
-                min={0}
+                min={1}
                 max={10}
-                step={0.1}
+                step={0.01}
                 value={[scores[i]]}
                 onValueChange={(v) => {
                   const next = Array.isArray(v) ? v[0] : v;
@@ -579,7 +580,8 @@ export default function Home() {
           <Button
             className="col-span-2 mt-2 bg-[#2f776a]"
             onClick={() => {
-              setSavedScores(scores);
+              setSavedScores(displayScores);
+              setScores(displayScores);
               notify(t.assessmentSaved);
             }}
           >
@@ -828,13 +830,13 @@ export default function Home() {
                   <div className="rounded-2xl border bg-white p-5">
                     <small>{t.avg}</small>
                     <b className="mt-2 block text-2xl">
-                      {(scores.reduce((a, b) => a + b, 0) / 8).toFixed(1)}
+                      {(displayScores.reduce((a, b) => a + b, 0) / 8).toFixed(1)}
                     </b>
                   </div>
                   <div className="rounded-2xl border bg-white p-5">
                     <small>{t.weakest}</small>
                     <b className="mt-2 block text-2xl">
-                      {labels[weakest]} · {scores[weakest].toFixed(1)}/10
+                      {labels[weakest]} · {displayScores[weakest]}/10
                     </b>
                   </div>
                 </div>
