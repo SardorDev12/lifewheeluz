@@ -17,6 +17,7 @@ import {
   CircleUserRound,
   Compass,
   Flag,
+  Info,
   Languages,
   LayoutDashboard,
   Menu,
@@ -69,6 +70,19 @@ const copy = {
     done: 'Bajarildi',
     wheel: 'Hayot g‘ildiragi',
     wheelHint: 'Har bir sohani 1 dan 10 gacha baholang.',
+    scoreGuideTitle: 'Ballar nimani anglatadi?',
+    scoreMeanings: [
+      'Inqiroz — zudlik bilan e’tibor kerak',
+      'Juda og‘ir holat',
+      'Tez-tez norozilik uyg‘otadi',
+      'Xohlaganimdan past',
+      'Aralash — ba’zisi yaxshi, ba’zisi yo‘q',
+      'Yomon emas, o‘sish joyi bor',
+      'Asosan yaxshi',
+      'Yaxshi ketmoqda',
+      'Zo‘r ketmoqda',
+      'Bundan a’lo bo‘lishi mumkin emas',
+    ],
     update: 'Baholashni saqlash',
     progress: 'Faol maqsadlar',
     allGoals: 'Barcha maqsadlar',
@@ -140,6 +154,19 @@ const copy = {
     done: 'Complete',
     wheel: 'Wheel of Life',
     wheelHint: 'Rate each area from 1 to 10.',
+    scoreGuideTitle: 'What do the scores mean?',
+    scoreMeanings: [
+      'Crisis — needs urgent attention',
+      'Really struggling',
+      'Frequently frustrating',
+      'Below where I want to be',
+      'Mixed — some good, some not',
+      'Not bad, room to grow',
+      'Mostly good',
+      'Doing well',
+      'Thriving',
+      'Couldn’t be better',
+    ],
     update: 'Save assessment',
     progress: 'Active goals',
     allGoals: 'View all goals',
@@ -211,6 +238,19 @@ const copy = {
     done: 'Выполнить',
     wheel: 'Колесо жизни',
     wheelHint: 'Оцените каждую сферу от 1 до 10.',
+    scoreGuideTitle: 'Что означают баллы?',
+    scoreMeanings: [
+      'Кризис — нужно срочное внимание',
+      'Очень тяжело',
+      'Часто расстраивает',
+      'Ниже, чем хотелось бы',
+      'Смешанно — что-то хорошо, что-то нет',
+      'Неплохо, есть куда расти',
+      'В основном хорошо',
+      'Всё идёт хорошо',
+      'Прекрасно',
+      'Лучше не бывает',
+    ],
     update: 'Сохранить оценку',
     progress: 'Активные цели',
     allGoals: 'Все цели',
@@ -510,6 +550,45 @@ function ScoreSlider({
   );
 }
 
+function ScorePicker({
+  value,
+  onChange,
+  ariaLabel,
+  meanings,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  ariaLabel: string;
+  meanings: string[];
+}) {
+  return (
+    <div>
+      <div role="radiogroup" aria-label={ariaLabel} className="flex gap-1">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={n === value}
+            aria-label={`${n}: ${meanings[n - 1]}`}
+            onClick={() => onChange(n)}
+            className={`h-7 min-w-0 flex-1 rounded-full text-[11px] font-semibold transition-colors ${
+              n === value
+                ? 'bg-[#2f776a] text-white'
+                : n < value
+                  ? 'bg-[#bfe0d8] text-[#1f5349]'
+                  : 'bg-[#e7ece8] text-slate-400'
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1.5 text-[11px] text-slate-500">{meanings[value - 1]}</p>
+    </div>
+  );
+}
+
 export default function Home() {
   const [locale, setLocale] = useState<Locale>('uz'),
     [view, setView] = useState<View>('today'),
@@ -519,7 +598,9 @@ export default function Home() {
     [mobileNav, setMobileNav] = useState(false),
     [goals, setGoals] = useState<Goal[]>(initialGoals),
     [reviews, setReviews] = useState<Review[]>([]),
-    [modal, setModal] = useState<'goal' | 'review' | 'profile' | null>(null),
+    [modal, setModal] = useState<
+      'goal' | 'review' | 'profile' | 'scoreGuide' | null
+    >(null),
     [selectedGoal, setSelectedGoal] = useState<number | null>(null),
     [toast, setToast] = useState(''),
     [profile, setProfile] = useState({
@@ -628,7 +709,16 @@ export default function Home() {
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
         <div>
           <h2 className="font-heading text-xl font-bold">{t.wheel}</h2>
-          <p className="mt-1 text-xs text-slate-400">{t.wheelHint}</p>
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+            {t.wheelHint}
+            <button
+              onClick={() => setModal('scoreGuide')}
+              aria-label={t.scoreGuideTitle}
+              className="text-[#2f776a]"
+            >
+              <Info size={14} />
+            </button>
+          </p>
         </div>
         <button
           onClick={() => setScores(savedScores)}
@@ -639,16 +729,17 @@ export default function Home() {
       </div>
       <div className="grid items-center gap-4 p-5 md:grid-cols-2 md:p-7">
         <LifeWheel labels={labels} scores={scores} />
-        <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+        <div className="space-y-5">
           {labels.map((l, i) => (
             <div key={l}>
               <span className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-500">
                 <span>{l}</span>
                 <b>{scores[i]}</b>
               </span>
-              <ScoreSlider
+              <ScorePicker
                 ariaLabel={l}
                 value={scores[i]}
+                meanings={t.scoreMeanings}
                 onChange={(v) =>
                   setScores(scores.map((s, n) => (n === i ? v : s)))
                 }
@@ -656,7 +747,7 @@ export default function Home() {
             </div>
           ))}
           <Button
-            className="col-span-2 mt-2 bg-[#2f776a]"
+            className="w-full bg-[#2f776a]"
             onClick={() => {
               setSavedScores(scores);
               notify(t.assessmentSaved);
@@ -1112,6 +1203,23 @@ export default function Home() {
             <Pencil />
             {t.settings}
           </Button>
+        </Modal>
+      )}
+      {modal === 'scoreGuide' && (
+        <Modal label={t.scoreGuideTitle} onClose={() => setModal(null)}>
+          <h2 className="pr-10 font-heading text-2xl font-bold">
+            {t.scoreGuideTitle}
+          </h2>
+          <ul className="mt-5 space-y-3">
+            {t.scoreMeanings.map((meaning, i) => (
+              <li key={meaning} className="flex items-start gap-3">
+                <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-[#f2f6f3] text-xs font-bold text-[#2f776a]">
+                  {i + 1}
+                </span>
+                <span className="pt-1 text-sm text-slate-600">{meaning}</span>
+              </li>
+            ))}
+          </ul>
         </Modal>
       )}
       {currentGoal && (
