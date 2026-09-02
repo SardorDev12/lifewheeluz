@@ -547,7 +547,7 @@ function ScoreSlider({
   );
 }
 
-function ScoreSelect({
+function ScoreDropdown({
   value,
   onChange,
   ariaLabel,
@@ -558,24 +558,96 @@ function ScoreSelect({
   ariaLabel: string;
   meanings: string[];
 }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent | globalThis.TouchEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleEscape(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
   return (
-    <div className="relative">
-      <select
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
         aria-label={ariaLabel}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full cursor-pointer appearance-none rounded-xl border border-[#dce4df] bg-[#fbfcfb] py-2.5 pr-9 pl-3 text-sm font-medium text-[#1f2c28] outline-none transition-colors focus:border-[#2f776a] focus:ring-2 focus:ring-[#2f776a]/20"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#dce4df] bg-[#fbfcfb] py-2.5 pr-3 pl-3.5 text-left text-sm outline-none transition-colors focus-visible:border-[#2f776a] focus-visible:ring-2 focus-visible:ring-[#2f776a]/20"
       >
-        {meanings.map((meaning, i) => (
-          <option key={meaning} value={i + 1}>
-            {i + 1} — {meaning}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={16}
-        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[#2f776a]"
-      />
+        <span className="flex items-center gap-2.5 truncate">
+          <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-[#2f776a] text-[11px] font-bold text-white">
+            {value}
+          </span>
+          <span className="truncate font-medium text-[#1f2c28]">
+            {meanings[value - 1]}
+          </span>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`flex-none text-[#2f776a] transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          aria-label={ariaLabel}
+          className="absolute inset-x-0 top-full z-50 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-[#dce4df] bg-white py-1.5 shadow-[0_12px_32px_rgba(35,65,57,.14)]"
+        >
+          {meanings.map((meaning, i) => {
+            const n = i + 1,
+              selected = n === value;
+            return (
+              <button
+                key={meaning}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onChange(n);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[#f2f6f3] ${selected ? 'bg-[#f2f6f3]' : ''}`}
+              >
+                <span
+                  className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[11px] font-bold ${
+                    selected
+                      ? 'bg-[#2f776a] text-white'
+                      : 'bg-[#e7ece8] text-slate-500'
+                  }`}
+                >
+                  {n}
+                </span>
+                <span
+                  className={
+                    selected
+                      ? 'font-semibold text-[#1f2c28]'
+                      : 'text-slate-600'
+                  }
+                >
+                  {meaning}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -694,7 +766,7 @@ export default function Home() {
     notify(t.reviewSaved);
   }
   const WheelEditor = () => (
-    <section className="overflow-hidden rounded-[24px] border border-[#dfe5df] bg-white shadow-[0_12px_40px_rgba(35,65,57,.06)]">
+    <section className="rounded-[24px] border border-[#dfe5df] bg-white shadow-[0_12px_40px_rgba(35,65,57,.06)]">
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
         <div>
           <h2 className="font-heading text-xl font-bold">{t.wheel}</h2>
@@ -715,7 +787,7 @@ export default function Home() {
               <span className="mb-1.5 block text-[11px] font-semibold text-slate-500">
                 {l}
               </span>
-              <ScoreSelect
+              <ScoreDropdown
                 ariaLabel={l}
                 value={scores[i]}
                 meanings={t.scoreMeanings}
