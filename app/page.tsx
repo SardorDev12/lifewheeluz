@@ -1,6 +1,14 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  FormEvent,
+  KeyboardEvent,
+  PointerEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ArrowRight,
   CalendarDays,
@@ -425,6 +433,83 @@ function PageTitle({ title, subtitle }: { title: string; subtitle: string }) {
   );
 }
 
+function ScoreSlider({
+  value,
+  onChange,
+  ariaLabel,
+  min = 1,
+  max = 10,
+  step = 1,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  ariaLabel: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  function valueFromClientX(clientX: number) {
+    const track = trackRef.current;
+    if (!track) return value;
+    const rect = track.getBoundingClientRect();
+    const fraction = rect.width
+      ? Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+      : 0;
+    const raw = min + fraction * (max - min);
+    return Math.min(max, Math.max(min, Math.round(raw / step) * step));
+  }
+
+  function handlePointerDown(e: PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    onChange(valueFromClientX(e.clientX));
+  }
+
+  function handlePointerMove(e: PointerEvent<HTMLDivElement>) {
+    if (e.buttons === 0) return;
+    onChange(valueFromClientX(e.clientX));
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      onChange(Math.min(max, value + step));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onChange(Math.max(min, value - step));
+    }
+  }
+
+  const percent = ((value - min) / (max - min)) * 100;
+
+  return (
+    <div
+      ref={trackRef}
+      role="slider"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onKeyDown={handleKeyDown}
+      className="relative flex h-6 w-full touch-none items-center select-none"
+    >
+      <div className="pointer-events-none absolute inset-x-0 h-2 rounded-full bg-[#e7ece8]" />
+      <div
+        className="pointer-events-none absolute h-2 rounded-full bg-[#2f776a]"
+        style={{ width: `${percent}%` }}
+      />
+      <div
+        className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white bg-[#2f776a] shadow-[0_1px_4px_rgba(35,65,57,.3)]"
+        style={{ left: `${percent}%` }}
+      />
+    </div>
+  );
+}
+
 export default function Home() {
   const [locale, setLocale] = useState<Locale>('uz'),
     [view, setView] = useState<View>('today'),
@@ -556,28 +641,19 @@ export default function Home() {
         <LifeWheel labels={labels} scores={scores} />
         <div className="grid grid-cols-2 gap-x-5 gap-y-3">
           {labels.map((l, i) => (
-            <label key={l}>
+            <div key={l}>
               <span className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-500">
                 <span>{l}</span>
                 <b>{scores[i]}</b>
               </span>
-              <input
-                aria-label={l}
-                type="range"
-                min="1"
-                max="10"
-                step="1"
+              <ScoreSlider
+                ariaLabel={l}
                 value={scores[i]}
-                onChange={(e) =>
-                  setScores(
-                    scores.map((s, n) =>
-                      n === i ? Number(e.target.value) : s,
-                    ),
-                  )
+                onChange={(v) =>
+                  setScores(scores.map((s, n) => (n === i ? v : s)))
                 }
-                className="h-2 w-full cursor-pointer touch-none appearance-none rounded-full bg-[#e7ece8] accent-[#2f776a] [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-[#2f776a] [&::-moz-range-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-[#2f776a] [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(35,65,57,.3)]"
               />
-            </label>
+            </div>
           ))}
           <Button
             className="col-span-2 mt-2 bg-[#2f776a]"
@@ -1044,29 +1120,26 @@ export default function Home() {
             {currentGoal.title}
           </h2>
           <p className="mt-2 text-sm text-slate-500">{currentGoal.note}</p>
-          <label className="mt-7 block">
+          <div className="mt-7">
             <span className="flex justify-between">
               <b>{t.progressLabel}</b>
               <b>{currentGoal.progress}%</b>
             </span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
+            <ScoreSlider
+              ariaLabel={t.progressLabel}
+              min={0}
+              max={100}
+              step={5}
               value={currentGoal.progress}
-              onChange={(e) =>
+              onChange={(v) =>
                 setGoals(
                   goals.map((g) =>
-                    g.id === currentGoal.id
-                      ? { ...g, progress: Number(e.target.value) }
-                      : g,
+                    g.id === currentGoal.id ? { ...g, progress: v } : g,
                   ),
                 )
               }
-              className="w-full accent-[#2f776a]"
             />
-          </label>
+          </div>
           <div className="mt-6 flex justify-between">
             <Button
               variant="outline"
