@@ -14,10 +14,10 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  ChevronDown,
   CircleUserRound,
   Compass,
   Flag,
-  Info,
   Languages,
   LayoutDashboard,
   Menu,
@@ -70,7 +70,6 @@ const copy = {
     done: 'Bajarildi',
     wheel: 'Hayot g‘ildiragi',
     wheelHint: 'Har bir sohani 1 dan 10 gacha baholang.',
-    scoreGuideTitle: 'Ballar nimani anglatadi?',
     scoreMeanings: [
       'Inqiroz — zudlik bilan e’tibor kerak',
       'Juda og‘ir holat',
@@ -154,7 +153,6 @@ const copy = {
     done: 'Complete',
     wheel: 'Wheel of Life',
     wheelHint: 'Rate each area from 1 to 10.',
-    scoreGuideTitle: 'What do the scores mean?',
     scoreMeanings: [
       'Crisis — needs urgent attention',
       'Really struggling',
@@ -238,7 +236,6 @@ const copy = {
     done: 'Выполнить',
     wheel: 'Колесо жизни',
     wheelHint: 'Оцените каждую сферу от 1 до 10.',
-    scoreGuideTitle: 'Что означают баллы?',
     scoreMeanings: [
       'Кризис — нужно срочное внимание',
       'Очень тяжело',
@@ -550,7 +547,7 @@ function ScoreSlider({
   );
 }
 
-function ScorePicker({
+function ScoreSelect({
   value,
   onChange,
   ariaLabel,
@@ -562,29 +559,23 @@ function ScorePicker({
   meanings: string[];
 }) {
   return (
-    <div>
-      <div role="radiogroup" aria-label={ariaLabel} className="flex gap-1">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={n === value}
-            aria-label={`${n}: ${meanings[n - 1]}`}
-            onClick={() => onChange(n)}
-            className={`h-7 min-w-0 flex-1 rounded-full text-[11px] font-semibold transition-colors ${
-              n === value
-                ? 'bg-[#2f776a] text-white'
-                : n < value
-                  ? 'bg-[#bfe0d8] text-[#1f5349]'
-                  : 'bg-[#e7ece8] text-slate-400'
-            }`}
-          >
-            {n}
-          </button>
+    <div className="relative">
+      <select
+        aria-label={ariaLabel}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full cursor-pointer appearance-none rounded-xl border border-[#dce4df] bg-[#fbfcfb] py-2.5 pr-9 pl-3 text-sm font-medium text-[#1f2c28] outline-none transition-colors focus:border-[#2f776a] focus:ring-2 focus:ring-[#2f776a]/20"
+      >
+        {meanings.map((meaning, i) => (
+          <option key={meaning} value={i + 1}>
+            {i + 1} — {meaning}
+          </option>
         ))}
-      </div>
-      <p className="mt-1.5 text-[11px] text-slate-500">{meanings[value - 1]}</p>
+      </select>
+      <ChevronDown
+        size={16}
+        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[#2f776a]"
+      />
     </div>
   );
 }
@@ -598,9 +589,7 @@ export default function Home() {
     [mobileNav, setMobileNav] = useState(false),
     [goals, setGoals] = useState<Goal[]>(initialGoals),
     [reviews, setReviews] = useState<Review[]>([]),
-    [modal, setModal] = useState<
-      'goal' | 'review' | 'profile' | 'scoreGuide' | null
-    >(null),
+    [modal, setModal] = useState<'goal' | 'review' | 'profile' | null>(null),
     [selectedGoal, setSelectedGoal] = useState<number | null>(null),
     [toast, setToast] = useState(''),
     [profile, setProfile] = useState({
@@ -709,16 +698,7 @@ export default function Home() {
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
         <div>
           <h2 className="font-heading text-xl font-bold">{t.wheel}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
-            {t.wheelHint}
-            <button
-              onClick={() => setModal('scoreGuide')}
-              aria-label={t.scoreGuideTitle}
-              className="text-[#2f776a]"
-            >
-              <Info size={14} />
-            </button>
-          </p>
+          <p className="mt-1 text-xs text-slate-400">{t.wheelHint}</p>
         </div>
         <button
           onClick={() => setScores(savedScores)}
@@ -729,14 +709,13 @@ export default function Home() {
       </div>
       <div className="grid items-center gap-4 p-5 md:grid-cols-2 md:p-7">
         <LifeWheel labels={labels} scores={scores} />
-        <div className="space-y-5">
+        <div className="space-y-4">
           {labels.map((l, i) => (
             <div key={l}>
-              <span className="mb-1.5 flex justify-between text-[11px] font-semibold text-slate-500">
-                <span>{l}</span>
-                <b>{scores[i]}</b>
+              <span className="mb-1.5 block text-[11px] font-semibold text-slate-500">
+                {l}
               </span>
-              <ScorePicker
+              <ScoreSelect
                 ariaLabel={l}
                 value={scores[i]}
                 meanings={t.scoreMeanings}
@@ -1203,23 +1182,6 @@ export default function Home() {
             <Pencil />
             {t.settings}
           </Button>
-        </Modal>
-      )}
-      {modal === 'scoreGuide' && (
-        <Modal label={t.scoreGuideTitle} onClose={() => setModal(null)}>
-          <h2 className="pr-10 font-heading text-2xl font-bold">
-            {t.scoreGuideTitle}
-          </h2>
-          <ul className="mt-5 space-y-3">
-            {t.scoreMeanings.map((meaning, i) => (
-              <li key={meaning} className="flex items-start gap-3">
-                <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-[#f2f6f3] text-xs font-bold text-[#2f776a]">
-                  {i + 1}
-                </span>
-                <span className="pt-1 text-sm text-slate-600">{meaning}</span>
-              </li>
-            ))}
-          </ul>
         </Modal>
       )}
       {currentGoal && (
