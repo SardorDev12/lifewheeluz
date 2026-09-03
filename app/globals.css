@@ -7,3 +7,7 @@
 }
 :root { --font-body:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --font-display:"Avenir Next",Inter,ui-sans-serif,system-ui,sans-serif; --background:#f5f7f3; --foreground:#1f2c28; --card:#fff; --card-foreground:#1f2c28; --popover:#fff; --popover-foreground:#1f2c28; --primary:#2f776a; --primary-foreground:#fff; --secondary:#eaf1ed; --secondary-foreground:#275f56; --muted:#edf1ee; --muted-foreground:#68766f; --accent:#f3ded3; --accent-foreground:#8e4e39; --destructive:#b43e35; --border:#dce4df; --input:#d4ded8; --ring:#4f8f83; --radius:.8rem; }
 *{box-sizing:border-box} html{background:var(--background)} body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-body)} button,select,input{font:inherit}button{cursor:pointer}::selection{background:#b8d8ce;color:#173d36}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+@keyframes wheel-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes wheel-bounce { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(calc(var(--bounce, 0px) * -1)); } 50% { transform: translateY(0); } 75% { transform: translateY(var(--bounce, 0px)); } }
+@keyframes road-scroll { from { background-position-x: 0; } to { background-position-x: -48px; } }

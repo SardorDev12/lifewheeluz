@@ -82,6 +82,16 @@ const copy = {
       'Zo‘r ketmoqda',
       'Bundan a’lo bo‘lishi mumkin emas',
     ],
+    rideTitle: 'Bugungi harakat',
+    rideSmoothLabel: 'Silliq aylanmoqda',
+    rideSmoothCaption:
+      'Sohalaringiz muvozanatli — g‘ildirak yo‘lda tekis harakatlanmoqda.',
+    rideUnevenLabel: 'Biroz notekis',
+    rideUnevenCaption:
+      'Ba’zi sohalar orqada qolmoqda — g‘ildirak sal g‘adir-budur aylanmoqda.',
+    rideRoughLabel: 'Qiyin aylanmoqda',
+    rideRoughCaption:
+      'Ko‘p soha e’tiborsiz qolgan — g‘ildirak yo‘lda qiynalib aylanmoqda.',
     update: 'Baholashni saqlash',
     progress: 'Faol maqsadlar',
     allGoals: 'Barcha maqsadlar',
@@ -165,6 +175,16 @@ const copy = {
       'Thriving',
       'Couldn’t be better',
     ],
+    rideTitle: 'Today’s ride',
+    rideSmoothLabel: 'Rolling smooth',
+    rideSmoothCaption:
+      'Your areas are balanced — the wheel is gliding evenly down the road.',
+    rideUnevenLabel: 'A little uneven',
+    rideUnevenCaption:
+      'A few areas are lagging — the wheel is rolling a bit bumpy.',
+    rideRoughLabel: 'Struggling to turn',
+    rideRoughCaption:
+      'Several areas need attention — the wheel is fighting the road.',
     update: 'Save assessment',
     progress: 'Active goals',
     allGoals: 'View all goals',
@@ -248,6 +268,15 @@ const copy = {
       'Прекрасно',
       'Лучше не бывает',
     ],
+    rideTitle: 'Сегодняшняя езда',
+    rideSmoothLabel: 'Катится гладко',
+    rideSmoothCaption:
+      'Сферы сбалансированы — колесо ровно катится по дороге.',
+    rideUnevenLabel: 'Немного неровно',
+    rideUnevenCaption:
+      'Некоторые сферы отстают — колесо катится с лёгкими толчками.',
+    rideRoughLabel: 'Едет с трудом',
+    rideRoughCaption: 'Многие сферы требуют внимания — колесу тяжело катиться.',
     update: 'Сохранить оценку',
     progress: 'Активные цели',
     allGoals: 'Все цели',
@@ -412,6 +441,99 @@ function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
     </div>
   );
 }
+
+function WheelRide({
+  scores,
+  title,
+  smoothLabel,
+  smoothCaption,
+  unevenLabel,
+  unevenCaption,
+  roughLabel,
+  roughCaption,
+}: {
+  scores: number[];
+  title: string;
+  smoothLabel: string;
+  smoothCaption: string;
+  unevenLabel: string;
+  unevenCaption: string;
+  roughLabel: string;
+  roughCaption: string;
+}) {
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length,
+    stdDev = Math.sqrt(
+      scores.reduce((a, b) => a + (b - avg) ** 2, 0) / scores.length,
+    ),
+    bounce = Math.min(14, stdDev * 3.2),
+    duration = Math.min(4, 1.3 + stdDev * 0.65),
+    [label, caption] =
+      stdDev < 0.9
+        ? [smoothLabel, smoothCaption]
+        : stdDev < 2
+          ? [unevenLabel, unevenCaption]
+          : [roughLabel, roughCaption],
+    c = 60,
+    r = 42,
+    p = (i: number, v: number) => {
+      const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2,
+        d = (r * v) / 10;
+      return [c + Math.cos(a) * d, c + Math.sin(a) * d];
+    };
+  return (
+    <section className="overflow-hidden rounded-[24px] border border-[#dfe5df] bg-white shadow-[0_12px_40px_rgba(35,65,57,.06)]">
+      <div className="px-6 pt-5">
+        <h2 className="font-heading text-xl font-bold">{title}</h2>
+        <p className="mt-1 text-sm font-semibold text-[#2f776a]">{label}</p>
+        <p className="mt-0.5 text-xs text-slate-400">{caption}</p>
+      </div>
+      <div className="relative mt-5 h-36 overflow-hidden bg-gradient-to-b from-[#eef3ee] to-[#e2e9e2]">
+        <div
+          className="absolute inset-x-0 bottom-9 h-[3px]"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(90deg, #97a89c 0 16px, transparent 16px 32px)',
+            animation: 'road-scroll .7s linear infinite',
+          }}
+        />
+        <div
+          className="absolute bottom-9 left-1/2 h-24 w-24 -translate-x-1/2"
+          style={
+            {
+              '--bounce': `${bounce}px`,
+              animation: 'wheel-bounce 1s ease-in-out infinite',
+            } as React.CSSProperties
+          }
+        >
+          <svg
+            viewBox="0 0 120 120"
+            className="h-full w-full"
+            role="img"
+            aria-label={`${label}: ${caption}`}
+            style={{ animation: `wheel-spin ${duration}s linear infinite` }}
+          >
+            {scores.map((_, i) => {
+              const [x, y] = p(i, 10);
+              return (
+                <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="#bfe0d8" />
+              );
+            })}
+            <polygon
+              points={scores.map((v, i) => p(i, v).join(',')).join(' ')}
+              fill="#2f776a"
+              fillOpacity=".22"
+              stroke="#2f776a"
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+            <circle cx={c} cy={c} r="7" fill="#2f776a" />
+          </svg>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Modal({
   children,
   onClose,
@@ -962,8 +1084,17 @@ export default function Home() {
                     {t.add}
                   </Button>
                 </div>
-                <div className="grid gap-5 xl:grid-cols-[1.35fr_.85fr]">
-                  <WheelEditor />
+                <div className="grid items-start gap-5 xl:grid-cols-[1.35fr_.85fr]">
+                  <WheelRide
+                    scores={scores}
+                    title={t.rideTitle}
+                    smoothLabel={t.rideSmoothLabel}
+                    smoothCaption={t.rideSmoothCaption}
+                    unevenLabel={t.rideUnevenLabel}
+                    unevenCaption={t.rideUnevenCaption}
+                    roughLabel={t.rideRoughLabel}
+                    roughCaption={t.rideRoughCaption}
+                  />
                   <div className="grid gap-5">
                     <section className="rounded-[24px] bg-[#244f48] p-6 text-white">
                       <div className="flex justify-between">
