@@ -97,7 +97,7 @@ const copy = {
     allGoals: 'Barcha maqsadlar',
     years: 'Uzoq muddatli',
     review: 'Keyingi oylik tahlil',
-    reviewDate: '1 sentabr',
+    monthlyAnalysis: 'Oylik tahlil',
     start: 'Tahlilni boshlash',
     add: 'Maqsad qo‘shish',
     health: 'Sog‘liq',
@@ -190,7 +190,7 @@ const copy = {
     allGoals: 'View all goals',
     years: 'Long-term',
     review: 'Next monthly review',
-    reviewDate: 'September 1',
+    monthlyAnalysis: 'Monthly analysis',
     start: 'Start review',
     add: 'Add goal',
     health: 'Health',
@@ -282,7 +282,7 @@ const copy = {
     allGoals: 'Все цели',
     years: 'Долгосрочная',
     review: 'Следующий месячный обзор',
-    reviewDate: '1 сентября',
+    monthlyAnalysis: 'Ежемесячный анализ',
     start: 'Начать обзор',
     add: 'Добавить цель',
     health: 'Здоровье',
@@ -331,6 +331,50 @@ const copy = {
     goalCreated: 'Новая цель создана.',
     reviewSaved: 'Ежемесячный обзор завершён.',
   },
+};
+const monthNames: Record<Locale, string[]> = {
+  uz: [
+    'yanvar',
+    'fevral',
+    'mart',
+    'aprel',
+    'may',
+    'iyun',
+    'iyul',
+    'avgust',
+    'sentabr',
+    'oktabr',
+    'noyabr',
+    'dekabr',
+  ],
+  en: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+  ru: [
+    'января',
+    'февраля',
+    'марта',
+    'апреля',
+    'мая',
+    'июня',
+    'июля',
+    'августа',
+    'сентября',
+    'октября',
+    'ноября',
+    'декабря',
+  ],
 };
 const initialScores = [6, 7, 5, 8, 7, 6, 4, 7],
   colors = [
@@ -487,9 +531,9 @@ function WheelRide({
         <p className="mt-1 text-sm font-semibold text-[#2f776a]">{label}</p>
         <p className="mt-0.5 text-xs text-slate-400">{caption}</p>
       </div>
-      <div className="relative mt-5 h-36 overflow-hidden bg-gradient-to-b from-[#eef3ee] to-[#e2e9e2]">
+      <div className="relative mt-5 h-52 overflow-hidden bg-gradient-to-b from-[#eef3ee] to-[#e2e9e2]">
         <div
-          className="absolute inset-x-0 bottom-9 h-[3px]"
+          className="absolute inset-x-0 bottom-14 h-[3px]"
           style={{
             backgroundImage:
               'repeating-linear-gradient(90deg, #97a89c 0 16px, transparent 16px 32px)',
@@ -497,7 +541,7 @@ function WheelRide({
           }}
         />
         <div
-          className="absolute bottom-9 left-1/2 h-24 w-24 -translate-x-1/2"
+          className="absolute bottom-14 left-1/2 h-36 w-36 -translate-x-1/2"
           style={
             {
               '--bounce': `${bounce}px`,
@@ -812,7 +856,14 @@ export default function Home() {
       [t.reviews, RefreshCw, 'reviews'],
     ] as const,
     weakest = scores.indexOf(Math.min(...scores)),
-    currentGoal = goals.find((g) => g.id === selectedGoal);
+    currentGoal = goals.find((g) => g.id === selectedGoal),
+    lastDayOfMonth = (() => {
+      const now = new Date(),
+        last = new Date(now.getFullYear(), now.getMonth() + 1, 0),
+        day = last.getDate(),
+        month = monthNames[locale][last.getMonth()];
+      return locale === 'en' ? `${month} ${day}` : `${day} ${month}`;
+    })();
   useEffect(() => {
     try {
       const raw = localStorage.getItem('muvozanat-draft');
@@ -1139,8 +1190,11 @@ export default function Home() {
                         {t.review}
                       </p>
                       <h2 className="mt-3 font-heading text-2xl font-bold">
-                        {t.reviewDate}
+                        {t.monthlyAnalysis}
                       </h2>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {lastDayOfMonth}
+                      </p>
                       <Button
                         onClick={() => setModal('review')}
                         variant="outline"
