@@ -510,7 +510,7 @@ function WheelRide({
       scores.reduce((a, b) => a + (b - avg) ** 2, 0) / scores.length,
     ),
     bounce = Math.min(14, stdDev * 3.2),
-    duration = Math.min(4, 1.3 + stdDev * 0.65),
+    duration = Math.min(9, 3.5 + stdDev * 2),
     [label, caption] =
       stdDev < 0.9
         ? [smoothLabel, smoothCaption]
@@ -537,15 +537,15 @@ function WheelRide({
           style={{
             backgroundImage:
               'repeating-linear-gradient(90deg, #97a89c 0 16px, transparent 16px 32px)',
-            animation: 'road-scroll .7s linear infinite',
+            animation: `road-scroll ${duration}s linear infinite`,
           }}
         />
         <div
-          className="absolute bottom-14 left-1/2 h-36 w-36 -translate-x-1/2"
+          className="absolute bottom-5 left-1/2 h-36 w-36 -translate-x-1/2"
           style={
             {
               '--bounce': `${bounce}px`,
-              animation: 'wheel-bounce 1s ease-in-out infinite',
+              animation: `wheel-bounce ${duration}s ease-in-out infinite`,
             } as React.CSSProperties
           }
         >

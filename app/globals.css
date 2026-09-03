@@ -10,4 +10,4 @@
 
 @keyframes wheel-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes wheel-bounce { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(calc(var(--bounce, 0px) * -1)); } 50% { transform: translateY(0); } 75% { transform: translateY(var(--bounce, 0px)); } }
-@keyframes road-scroll { from { background-position-x: 0; } to { background-position-x: -48px; } }
+@keyframes road-scroll { from { background-position-x: 0; } to { background-position-x: -32px; } }
