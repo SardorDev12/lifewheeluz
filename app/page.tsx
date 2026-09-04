@@ -10,7 +10,6 @@ import {
   ChevronRight,
   CircleUserRound,
   Compass,
-  Flag,
   Languages,
   LayoutDashboard,
   Menu,
@@ -57,11 +56,6 @@ const copy = {
     reviews: 'Tahlillar',
     settings: 'Sozlamalar',
     overview: 'Bugungi ko‘rinish',
-    focus: 'Asosiy e’tibor',
-    focusText: '{area} sohasini {score} dan {target} ga olib chiqish',
-    next: 'Keyingi qadam',
-    noFocusGoal: 'Bu soha uchun hali maqsad yo‘q.',
-    allFocusDone: 'Bu sohadagi barcha vazifalar bajarildi!',
     done: 'Bajarildi',
     wheel: 'Hayot g‘ildiragi',
     wheelHint: 'Har bir sohani 1 dan 10 gacha baholang.',
@@ -150,7 +144,6 @@ const copy = {
     offline: 'Qurilmada saqlanmoqda',
     offlineHint:
       'Supabase ulangach ma’lumotlar hisobingiz bilan sinxronlanadi.',
-    completedAction: 'Bugungi qadam bajarildi!',
     assessmentSaved: 'Yangi baholash saqlandi.',
     goalCreated: 'Yangi maqsad yaratildi.',
     reviewSaved: 'Oylik tahlil yakunlandi.',
@@ -164,11 +157,6 @@ const copy = {
     reviews: 'Reviews',
     settings: 'Settings',
     overview: 'Today at a glance',
-    focus: 'Priority focus',
-    focusText: 'Move {area} from a {score} to a {target}',
-    next: 'Next action',
-    noFocusGoal: 'No goal yet for this area.',
-    allFocusDone: 'All tasks for this area are complete!',
     done: 'Complete',
     wheel: 'Wheel of Life',
     wheelHint: 'Rate each area from 1 to 10.',
@@ -257,7 +245,6 @@ const copy = {
     offline: 'Saving on this device',
     offlineHint:
       'Your data will sync with your account after Supabase is connected.',
-    completedAction: 'Today’s action is complete!',
     assessmentSaved: 'New assessment saved.',
     goalCreated: 'New goal created.',
     reviewSaved: 'Monthly review completed.',
@@ -271,11 +258,6 @@ const copy = {
     reviews: 'Обзоры',
     settings: 'Настройки',
     overview: 'Сегодняшний обзор',
-    focus: 'Главный фокус',
-    focusText: 'Повысить «{area}» с {score} до {target}',
-    next: 'Следующее действие',
-    noFocusGoal: 'Для этой сферы пока нет цели.',
-    allFocusDone: 'Все задачи по этой сфере выполнены!',
     done: 'Выполнить',
     wheel: 'Колесо жизни',
     wheelHint: 'Оцените каждую сферу от 1 до 10.',
@@ -362,7 +344,6 @@ const copy = {
     offline: 'Сохраняется на устройстве',
     offlineHint:
       'После подключения Supabase данные синхронизируются с аккаунтом.',
-    completedAction: 'Сегодняшний шаг выполнен!',
     assessmentSaved: 'Новая оценка сохранена.',
     goalCreated: 'Новая цель создана.',
     reviewSaved: 'Ежемесячный обзор завершён.',
@@ -485,15 +466,6 @@ function descendantIds(goals: Goal[], id: number): number[] {
     k.id,
     ...descendantIds(goals, k.id),
   ]);
-}
-function firstUndoneLeaf(goal: Goal, goals: Goal[]): Goal | null {
-  const kids = childrenOf(goals, goal.id);
-  if (!kids.length) return goal.progress === 100 ? null : goal;
-  for (const kid of kids) {
-    const found = firstUndoneLeaf(kid, goals);
-    if (found) return found;
-  }
-  return null;
 }
 
 function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
@@ -890,14 +862,6 @@ export default function Home() {
         created.getMonth() === now.getMonth()
       );
     });
-  const focusGoal = goals.find(
-      (g) => g.parentId === null && g.area === weakest,
-    ),
-    focusAction = focusGoal ? firstUndoneLeaf(focusGoal, goals) : null,
-    focusText = t.focusText
-      .replace('{area}', labels[weakest])
-      .replace('{score}', String(scores[weakest]))
-      .replace('{target}', String(Math.min(10, scores[weakest] + 1)));
   useEffect(() => {
     try {
       const raw = localStorage.getItem('muvozanat-draft');
@@ -1199,75 +1163,6 @@ export default function Home() {
                     whyHint={t.rideWhyHint}
                   />
                   <div className="grid gap-5">
-                    <section className="rounded-[24px] bg-[#244f48] p-6 text-white">
-                      <div className="flex justify-between">
-                        <p className="text-xs font-bold uppercase text-emerald-100/70">
-                          {t.focus}
-                        </p>
-                        <Flag size={17} />
-                      </div>
-                      <h2 className="mt-4 font-heading text-2xl font-bold">
-                        {focusText}
-                      </h2>
-                      <div className="mt-6 rounded-2xl bg-white/10 p-4">
-                        <p className="text-[10px] uppercase">{t.next}</p>
-                        {focusAction ? (
-                          <div className="mt-2 flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                const done = focusAction.progress !== 100;
-                                setGoals(
-                                  goals.map((g) =>
-                                    g.id === focusAction.id
-                                      ? { ...g, progress: done ? 100 : 0 }
-                                      : g,
-                                  ),
-                                );
-                                if (done) notify(t.completedAction);
-                              }}
-                              className={`grid size-9 flex-none place-items-center rounded-full border ${focusAction.progress === 100 ? 'bg-[#efad8f] text-[#244f48]' : ''}`}
-                            >
-                              {focusAction.progress === 100 && <Check />}
-                            </button>
-                            <div>
-                              <p
-                                className={
-                                  focusAction.progress === 100
-                                    ? 'line-through opacity-60'
-                                    : ''
-                                }
-                              >
-                                {focusAction.title}
-                              </p>
-                              {focusGoal && focusAction.id !== focusGoal.id && (
-                                <p className="mt-1 flex items-center gap-1 text-xs opacity-60">
-                                  <Target size={12} />
-                                  {focusGoal.title}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-2">
-                            <p className="text-sm opacity-80">
-                              {focusGoal ? t.allFocusDone : t.noFocusGoal}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setAddGoalParentId(
-                                  focusGoal ? focusGoal.id : null,
-                                );
-                                setModal('goal');
-                              }}
-                              className="mt-3 flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold"
-                            >
-                              <Plus size={14} />
-                              {focusGoal ? t.addSubgoal : t.add}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </section>
                     {!hasReviewedThisMonth && (
                       <section className="rounded-[24px] border bg-[#fff8f3] p-6">
                         <p className="text-xs font-bold uppercase text-[#bc6d4f]">
