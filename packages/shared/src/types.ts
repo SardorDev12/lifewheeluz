@@ -2,9 +2,13 @@ export type Locale = 'uz' | 'en' | 'ru';
 
 export type View = 'today' | 'life' | 'goals' | 'reviews' | 'settings';
 
+// String (uuid) ids, not sequential numbers: goals/reviews created on the
+// free tier still get a real crypto.randomUUID() so the id format is
+// identical to Supabase's `uuid` primary keys, and migrateLocalToCloud
+// (entitlement.ts) never needs to remap ids when upgrading to Pro.
 export type Goal = {
-  id: number;
-  parentId: number | null;
+  id: string;
+  parentId: string | null;
   area: number;
   title: string;
   progress: number;
@@ -13,7 +17,7 @@ export type Goal = {
 };
 
 export type Review = {
-  id: number;
+  id: string;
   date: string;
   createdAt: string;
   win: string;

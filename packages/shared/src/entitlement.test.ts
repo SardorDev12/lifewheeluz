@@ -50,7 +50,7 @@ describe('migrateLocalToCloud', () => {
     const localStore = createLocalStore(createMemoryEngine());
     const goals: Goal[] = [
       {
-        id: 1,
+        id: 'g1',
         parentId: null,
         area: 2,
         title: 'Migrated goal',
@@ -61,7 +61,7 @@ describe('migrateLocalToCloud', () => {
     ];
     const reviews: Review[] = [
       {
-        id: 1,
+        id: 'r1',
         date: 'Aug 2026',
         createdAt: new Date().toISOString(),
         win: 'Win',

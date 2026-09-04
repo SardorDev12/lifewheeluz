@@ -2,9 +2,17 @@ import type { Goal } from '../types';
 
 export const initialScores = [6, 7, 5, 8, 7, 6, 4, 7];
 
+// Fixed uuids (not crypto.randomUUID() at module-load time) so the seed
+// data is stable across reloads/tests/snapshots.
+const SEED_GOAL_1 = '2d60f1c1-4f23-40f6-8065-0ebe574d7413',
+  SEED_GOAL_2 = 'c580db60-4b0a-4de2-8f4f-13a3ac34a4bb',
+  SEED_GOAL_3 = '11d772af-7a1b-4176-99b7-abc49b1cf9d4',
+  SEED_GOAL_4 = 'e6664238-37c0-4d8e-a78a-18985167f4d7',
+  SEED_GOAL_5 = '2fbfd876-e6b8-4901-94a3-cf799361e151';
+
 export const initialGoals: Goal[] = [
   {
-    id: 1,
+    id: SEED_GOAL_1,
     parentId: null,
     area: 1,
     title: 'Product rahbari bo‘lish',
@@ -13,7 +21,7 @@ export const initialGoals: Goal[] = [
     note: 'Strategik fikrlash va jamoa yetakchiligini rivojlantirish.',
   },
   {
-    id: 2,
+    id: SEED_GOAL_2,
     parentId: null,
     area: 2,
     title: 'Moliyaviy zaxira yaratish',
@@ -22,7 +30,7 @@ export const initialGoals: Goal[] = [
     note: '12 oylik xarajatlarni qoplaydigan xavfsizlik fondi.',
   },
   {
-    id: 3,
+    id: SEED_GOAL_3,
     parentId: null,
     area: 5,
     title: 'Ingliz tilida erkin gapirish',
@@ -31,8 +39,8 @@ export const initialGoals: Goal[] = [
     note: 'Har kuni 30 daqiqa faol mashq.',
   },
   {
-    id: 4,
-    parentId: 3,
+    id: SEED_GOAL_4,
+    parentId: SEED_GOAL_3,
     area: 5,
     title: 'Har kuni 20 ta yangi so‘z yodlash',
     progress: 100,
@@ -40,8 +48,8 @@ export const initialGoals: Goal[] = [
     note: 'Kundalik lug‘at mashqi.',
   },
   {
-    id: 5,
-    parentId: 3,
+    id: SEED_GOAL_5,
+    parentId: SEED_GOAL_3,
     area: 5,
     title: 'Haftada 3 marta suhbat klubi',
     progress: 0,

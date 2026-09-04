@@ -387,8 +387,8 @@ export default function Home() {
     [goals, setGoals] = useState<Goal[]>(initialGoals),
     [reviews, setReviews] = useState<Review[]>([]),
     [modal, setModal] = useState<'goal' | 'review' | 'profile' | null>(null),
-    [selectedGoal, setSelectedGoal] = useState<number | null>(null),
-    [addGoalParentId, setAddGoalParentId] = useState<number | null>(null),
+    [selectedGoal, setSelectedGoal] = useState<string | null>(null),
+    [addGoalParentId, setAddGoalParentId] = useState<string | null>(null),
     [toast, setToast] = useState(''),
     [profile, setProfile] = useState({
       name: 'Aziz Karimov',
@@ -453,7 +453,7 @@ export default function Home() {
     setGoals([
       ...goals,
       {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         parentId: addGoalParentId,
         title,
         area: parent ? parent.area : Number(f.get('area')),
@@ -471,7 +471,7 @@ export default function Home() {
     const f = new FormData(e.currentTarget);
     setReviews([
       {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         date: new Date().toLocaleDateString(locale),
         createdAt: new Date().toISOString(),
         win: String(f.get('win')),

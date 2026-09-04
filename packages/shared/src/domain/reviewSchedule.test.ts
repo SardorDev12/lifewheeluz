@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Review } from '../types';
 import { hasReviewedThisMonth, monthlyLabelFor } from './reviewSchedule';
 
-function review(overrides: Partial<Review> & { id: number }): Review {
+function review(overrides: Partial<Review> & { id: string }): Review {
   return {
     id: overrides.id,
     date: overrides.date ?? '',
@@ -45,13 +45,13 @@ describe('hasReviewedThisMonth', () => {
 
   it('is true when a review was created in the given month', () => {
     const now = new Date('2026-09-04');
-    const reviews = [review({ id: 1, createdAt: '2026-09-01T00:00:00Z' })];
+    const reviews = [review({ id: '1', createdAt: '2026-09-01T00:00:00Z' })];
     expect(hasReviewedThisMonth(reviews, now)).toBe(true);
   });
 
   it('is false when the only review is from a different month', () => {
     const now = new Date('2026-09-04');
-    const reviews = [review({ id: 1, createdAt: '2026-08-15T00:00:00Z' })];
+    const reviews = [review({ id: '1', createdAt: '2026-08-15T00:00:00Z' })];
     expect(hasReviewedThisMonth(reviews, now)).toBe(false);
   });
 });

@@ -38,7 +38,7 @@ describe('createLocalStore', () => {
     const store = createLocalStore(createMemoryEngine());
     const goals = [
       {
-        id: 1,
+        id: 'g1',
         parentId: null,
         area: 0,
         title: 'Test goal',
@@ -49,7 +49,7 @@ describe('createLocalStore', () => {
     ];
     const reviews = [
       {
-        id: 1,
+        id: 'r1',
         date: 'Sep 2026',
         createdAt: new Date().toISOString(),
         win: 'Shipped',
