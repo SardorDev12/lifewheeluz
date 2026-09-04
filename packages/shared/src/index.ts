@@ -27,4 +27,13 @@ export {
   serializeDraft,
 } from './persistence/draft';
 export { createLocalStore } from './persistence/localStore';
+export { createCloudStore } from './persistence/cloudStore';
 export { migrateLocalToCloud } from './entitlement';
+
+export {
+  requestMagicLink,
+  signOut,
+  getCurrentUserId,
+  onAuthStateChange,
+} from './api/auth';
+export type { RequestMagicLinkResult } from './api/auth';

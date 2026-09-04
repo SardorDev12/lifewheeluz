@@ -65,6 +65,13 @@ describe('createLocalStore', () => {
     expect(draft.reviews).toEqual(reviews);
   });
 
+  it('round-trips saveLocale', async () => {
+    const store = createLocalStore(createMemoryEngine());
+    await store.saveLocale('ru');
+    const draft = await store.load();
+    expect(draft.locale).toBe('ru');
+  });
+
   it('two independent stores over the same engine see each others writes', async () => {
     const engine = createMemoryEngine();
     const storeA = createLocalStore(engine);

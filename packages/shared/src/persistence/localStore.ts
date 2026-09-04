@@ -29,5 +29,8 @@ export function createLocalStore(engine: StorageEngine): DataStore {
     async saveProfile(profile) {
       await persist({ ...(await load()), profile });
     },
+    async saveLocale(locale) {
+      await persist({ ...(await load()), locale });
+    },
   };
 }

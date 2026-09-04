@@ -21,6 +21,7 @@ export async function migrateLocalToCloud(
 
   const proProfile: Profile = { ...draft.profile, tier: 'pro' };
   await cloudStore.saveProfile(proProfile);
+  await cloudStore.saveLocale(draft.locale);
   await localStore.saveProfile(proProfile);
 
   return proProfile;

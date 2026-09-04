@@ -3,7 +3,7 @@ import { migrateLocalToCloud } from './entitlement';
 import { defaultDraft } from './persistence/draft';
 import { createLocalStore } from './persistence/localStore';
 import type { DataStore, StorageEngine } from './persistence/store';
-import type { DraftState, Goal, Profile, Review } from './types';
+import type { DraftState, Goal, Locale, Profile, Review } from './types';
 
 function createMemoryEngine(): StorageEngine {
   const map = new Map<string, string>();
@@ -40,6 +40,10 @@ function createMockCloudStore() {
     async saveProfile(profile: Profile) {
       calls.push('saveProfile');
       draft = { ...draft, profile };
+    },
+    async saveLocale(locale: Locale) {
+      calls.push('saveLocale');
+      draft = { ...draft, locale };
     },
   };
   return { store, calls, getDraft: () => draft };
@@ -111,6 +115,16 @@ describe('migrateLocalToCloud', () => {
     });
   });
 
+  it('carries the local locale over to the cloud profile', async () => {
+    const localStore = createLocalStore(createMemoryEngine());
+    await localStore.saveLocale('ru');
+    const { store: cloudStore, getDraft } = createMockCloudStore();
+
+    await migrateLocalToCloud(localStore, cloudStore);
+
+    expect(getDraft().locale).toBe('ru');
+  });
+
   it('writes each field exactly once (no redundant round-trips)', async () => {
     const localStore = createLocalStore(createMemoryEngine());
     const { store: cloudStore, calls } = createMockCloudStore();
@@ -122,6 +136,7 @@ describe('migrateLocalToCloud', () => {
       'saveGoals',
       'saveReviews',
       'saveProfile',
+      'saveLocale',
     ]);
   });
 });

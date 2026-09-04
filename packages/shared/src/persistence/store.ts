@@ -1,4 +1,4 @@
-import type { DraftState, Goal, Profile, Review } from '../types';
+import type { DraftState, Goal, Locale, Profile, Review } from '../types';
 
 /**
  * A place the app's data lives. `localStore` (device-only) and `cloudStore`
@@ -12,6 +12,7 @@ export interface DataStore {
   saveGoals(goals: Goal[]): Promise<void>;
   saveReviews(reviews: Review[]): Promise<void>;
   saveProfile(profile: Profile): Promise<void>;
+  saveLocale(locale: Locale): Promise<void>;
 }
 
 /**
