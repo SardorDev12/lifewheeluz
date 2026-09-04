@@ -31,6 +31,20 @@
     "coverage/**",
     "next-env.d.ts"
   ],
+  "overrides": [
+    {
+      "files": ["mobile/metro.config.js", "mobile/babel.config.js"],
+      "rules": {
+        "typescript/no-require-imports": "off"
+      }
+    },
+    {
+      "files": ["mobile/src/components/WheelRide.tsx"],
+      "rules": {
+        "react/react-compiler": "off"
+      }
+    }
+  ],
   "rules": {
     "no-array-constructor": "error",
     "no-var": "error",
