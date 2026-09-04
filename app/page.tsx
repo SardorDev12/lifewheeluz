@@ -97,7 +97,6 @@ const copy = {
     progress: 'Faol maqsadlar',
     allGoals: 'Barcha maqsadlar',
     years: 'Uzoq muddatli',
-    review: 'Keyingi oylik tahlil',
     monthlyAnalysis: 'Oylik tahlil',
     monthlyAnalysisSubtitle: '{month} oyi tahlili',
     start: 'Tahlilni boshlash',
@@ -191,7 +190,6 @@ const copy = {
     progress: 'Active goals',
     allGoals: 'View all goals',
     years: 'Long-term',
-    review: 'Next monthly review',
     monthlyAnalysis: 'Monthly analysis',
     monthlyAnalysisSubtitle: '{month} analysis',
     start: 'Start review',
@@ -284,7 +282,6 @@ const copy = {
     progress: 'Активные цели',
     allGoals: 'Все цели',
     years: 'Долгосрочная',
-    review: 'Следующий месячный обзор',
     monthlyAnalysis: 'Ежемесячный анализ',
     monthlyAnalysisSubtitle: 'Анализ за {month}',
     start: 'Начать обзор',
@@ -1199,11 +1196,8 @@ export default function Home() {
                     {!hasReviewedThisMonth && (
                       <section className="rounded-[24px] border bg-[#fff8f3] p-6">
                         <p className="text-xs font-bold uppercase text-[#bc6d4f]">
-                          {t.review}
-                        </p>
-                        <h2 className="mt-3 font-heading text-2xl font-bold">
                           {t.monthlyAnalysis}
-                        </h2>
+                        </p>
                         <p className="mt-1 text-sm text-slate-500">
                           {lastMonthLabel}
                         </p>
