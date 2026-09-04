@@ -1384,11 +1384,34 @@ export default function Home() {
                 💡 {parentGoal ? t.smartHintSub : t.smartHintBig}
               </p>
               <form onSubmit={addGoal} className="mt-4 space-y-4">
+                {parentGoal ? (
+                  <Field label={t.area}>
+                    <span
+                      className="flex h-11 items-center rounded-lg border px-3 text-sm font-semibold"
+                      style={{ color: colors[parentGoal.area] }}
+                    >
+                      {labels[parentGoal.area]}
+                    </span>
+                  </Field>
+                ) : (
+                  <Field label={t.area}>
+                    <select
+                      name="area"
+                      defaultValue={weakest}
+                      className="h-11 w-full rounded-lg border px-3"
+                    >
+                      {labels.map((l, i) => (
+                        <option value={i} key={l}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
                 <Field label={t.title}>
                   <Input
                     name="title"
                     required
-                    autoFocus
                     placeholder={
                       parentGoal
                         ? t.subgoalTitlePlaceholder
@@ -1397,40 +1420,14 @@ export default function Home() {
                     className="h-11"
                   />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
-                  {parentGoal ? (
-                    <Field label={t.area}>
-                      <span
-                        className="flex h-11 items-center rounded-lg border px-3 text-sm font-semibold"
-                        style={{ color: colors[parentGoal.area] }}
-                      >
-                        {labels[parentGoal.area]}
-                      </span>
-                    </Field>
-                  ) : (
-                    <Field label={t.area}>
-                      <select
-                        name="area"
-                        defaultValue={weakest}
-                        className="h-11 w-full rounded-lg border px-3"
-                      >
-                        {labels.map((l, i) => (
-                          <option value={i} key={l}>
-                            {l}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                  )}
-                  <Field label={t.year}>
-                    <Input
-                      name="year"
-                      type="number"
-                      defaultValue={parentGoal ? parentGoal.year : 2029}
-                      className="h-11"
-                    />
-                  </Field>
-                </div>
+                <Field label={t.year}>
+                  <Input
+                    name="year"
+                    type="number"
+                    defaultValue={parentGoal ? parentGoal.year : 2029}
+                    className="h-11"
+                  />
+                </Field>
                 <Field label={t.motivation}>
                   <Textarea name="note" />
                 </Field>
