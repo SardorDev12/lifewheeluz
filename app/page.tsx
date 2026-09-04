@@ -26,24 +26,44 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import {
   childrenOf,
   colors,
   computeWheelRideStats,
   copy,
+  createCloudStore,
+  createLocalStore,
   descendantIds,
   effectiveProgress,
   getAreaLabels,
+  getCurrentUserId,
   hasReviewedThisMonth as computeHasReviewedThisMonth,
   initialGoals,
   initialScores,
+  migrateLocalToCloud,
   monthlyLabelFor,
+  onAuthStateChange,
   polarPoint,
+  requestMagicLink,
+  signOut as signOutOfSupabase,
+  type DataStore,
   type Goal,
   type Locale,
+  type Profile,
   type Review,
+  type StorageEngine,
   type View,
 } from '@lifewheeluz/shared';
+
+const webStorageEngine: StorageEngine = {
+  async getItem(key) {
+    return localStorage.getItem(key);
+  },
+  async setItem(key, value) {
+    localStorage.setItem(key, value);
+  },
+};
 
 function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
   const size = 310,
@@ -390,10 +410,15 @@ export default function Home() {
     [selectedGoal, setSelectedGoal] = useState<string | null>(null),
     [addGoalParentId, setAddGoalParentId] = useState<string | null>(null),
     [toast, setToast] = useState(''),
-    [profile, setProfile] = useState({
+    [profile, setProfile] = useState<Profile>({
       name: 'Aziz Karimov',
       email: 'aziz@example.uz',
+      tier: 'free',
     }),
+    [userId, setUserId] = useState<string | null>(null),
+    [upgradeStatus, setUpgradeStatus] = useState<
+      'idle' | 'sending' | 'sent' | 'error'
+    >('idle'),
     [hydrated, setHydrated] = useState(false);
   const t = copy[locale],
     labels = useMemo(() => getAreaLabels(locale), [locale]),
@@ -407,34 +432,15 @@ export default function Home() {
     currentGoal = goals.find((g) => g.id === selectedGoal),
     lastMonthLabel = monthlyLabelFor(new Date(), locale),
     hasReviewedThisMonth = computeHasReviewedThisMonth(reviews);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('muvozanat-draft');
-      if (raw) {
-        const d = JSON.parse(raw);
-        setScores(d.scores ?? initialScores);
-        setSavedScores(d.scores ?? initialScores);
-        setGoals(d.goals ?? initialGoals);
-        setReviews(d.reviews ?? []);
-        setLocale(d.locale ?? 'uz');
-        setProfile(d.profile ?? profile);
-      }
-    } catch {}
-    setHydrated(true);
-  }, []);
-  useEffect(() => {
-    if (hydrated)
-      localStorage.setItem(
-        'muvozanat-draft',
-        JSON.stringify({
-          scores: savedScores,
-          goals,
-          reviews,
-          locale,
-          profile,
-        }),
-      );
-  }, [hydrated, savedScores, goals, reviews, locale, profile]);
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const localStore = useMemo(() => createLocalStore(webStorageEngine), []);
+  const activeStore: DataStore = useMemo(
+    () =>
+      supabase && userId && profile.tier === 'pro'
+        ? createCloudStore(supabase, userId)
+        : localStore,
+    [supabase, userId, profile.tier, localStore],
+  );
   const notify = (m: string) => {
       setToast(m);
       window.setTimeout(() => setToast(''), 2400);
@@ -444,6 +450,125 @@ export default function Home() {
       setMobileNav(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+  // Hydrate from whatever's on this device first — instant, and always
+  // available even offline. Free users stop here; Pro users get
+  // reconciled from the cloud by the next effect once a session resolves.
+  useEffect(() => {
+    let cancelled = false;
+    localStore
+      .load()
+      .then((draft) => {
+        if (cancelled) return;
+        setScores(draft.scores);
+        setSavedScores(draft.scores);
+        setGoals(draft.goals);
+        setReviews(draft.reviews);
+        setLocale(draft.locale);
+        setProfile(draft.profile);
+        setHydrated(true);
+      })
+      .catch((err: unknown) =>
+        console.error('Failed to load local draft', err),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [localStore]);
+  // Track the signed-in user, if any (only relevant once Supabase is
+  // actually configured — createBrowserSupabaseClient() returns null
+  // otherwise, and the free tier never touches this).
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    getCurrentUserId(supabase)
+      .then((id) => {
+        if (!cancelled) setUserId(id);
+      })
+      .catch((err: unknown) => console.error('Failed to read session', err));
+    const unsubscribe = onAuthStateChange(supabase, (id) => setUserId(id));
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [supabase]);
+  // Once we know both "this device says Pro" and "there's a live
+  // session", the cloud is the source of truth — pull it in over
+  // whatever the local snapshot had. profile.tier is a real dependency
+  // here (not just hydrated/supabase/userId): re-running it right after
+  // the upgrade flow's own setProfile flips it to 'pro' is harmless
+  // (it just re-fetches the same rows migrateLocalToCloud already wrote).
+  useEffect(() => {
+    if (!hydrated || !supabase || !userId || profile.tier !== 'pro') return;
+    let cancelled = false;
+    createCloudStore(supabase, userId)
+      .load()
+      .then((draft) => {
+        if (cancelled) return;
+        setScores(draft.scores);
+        setSavedScores(draft.scores);
+        setGoals(draft.goals);
+        setReviews(draft.reviews);
+        setLocale(draft.locale);
+        setProfile(draft.profile);
+      })
+      .catch((err: unknown) =>
+        console.error('Failed to load cloud draft', err),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, supabase, userId, profile.tier]);
+  // The complementary case: a session just appeared on a device that's
+  // still on the free tier — this *is* the upgrade, so run the one-time
+  // local-to-cloud migration and flip to Pro.
+  useEffect(() => {
+    if (!hydrated || !supabase || !userId || profile.tier === 'pro') return;
+    let cancelled = false;
+    migrateLocalToCloud(localStore, createCloudStore(supabase, userId))
+      .then((proProfile) => {
+        if (cancelled) return;
+        setProfile(proProfile);
+        setUpgradeStatus('idle');
+        notify(t.proActive);
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to migrate to Pro', err);
+        if (!cancelled) setUpgradeStatus('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, supabase, userId, profile.tier, localStore, t.proActive]);
+  useEffect(() => {
+    if (!hydrated) return;
+    activeStore
+      .saveScores(savedScores)
+      .catch((err: unknown) => console.error('Failed to save scores', err));
+  }, [hydrated, savedScores, activeStore]);
+  useEffect(() => {
+    if (!hydrated) return;
+    activeStore
+      .saveGoals(goals)
+      .catch((err: unknown) => console.error('Failed to save goals', err));
+  }, [hydrated, goals, activeStore]);
+  useEffect(() => {
+    if (!hydrated) return;
+    activeStore
+      .saveReviews(reviews)
+      .catch((err: unknown) => console.error('Failed to save reviews', err));
+  }, [hydrated, reviews, activeStore]);
+  useEffect(() => {
+    if (!hydrated) return;
+    activeStore
+      .saveProfile(profile)
+      .catch((err: unknown) => console.error('Failed to save profile', err));
+  }, [hydrated, profile, activeStore]);
+  useEffect(() => {
+    if (!hydrated) return;
+    activeStore
+      .saveLocale(locale)
+      .catch((err: unknown) => console.error('Failed to save locale', err));
+  }, [hydrated, locale, activeStore]);
   function addGoal(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
@@ -482,6 +607,39 @@ export default function Home() {
     ]);
     setModal(null);
     notify(t.reviewSaved);
+  }
+  async function handleUpgradeSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!supabase) return;
+    const f = new FormData(e.currentTarget),
+      email = String(f.get('email') ?? '').trim();
+    if (!email) return;
+    setUpgradeStatus('sending');
+    const { error } = await requestMagicLink(
+      supabase,
+      email,
+      window.location.origin,
+    );
+    setUpgradeStatus(error ? 'error' : 'sent');
+  }
+  async function handleSignOut() {
+    if (!supabase) return;
+    // The local blob has been frozen since the moment of upgrade (every
+    // save since then went to the cloud store only) — bring it current
+    // before dropping back to the free tier, so signing out doesn't look
+    // like data loss.
+    const freeProfile: Profile = { ...profile, tier: 'free' };
+    await Promise.all([
+      localStore.saveScores(savedScores),
+      localStore.saveGoals(goals),
+      localStore.saveReviews(reviews),
+      localStore.saveLocale(locale),
+      localStore.saveProfile(freeProfile),
+    ]);
+    await signOutOfSupabase(supabase);
+    setUserId(null);
+    setProfile(freeProfile);
+    setUpgradeStatus('idle');
   }
   const WheelEditor = () => (
     <section className="rounded-[24px] border border-[#dfe5df] bg-white shadow-[0_12px_40px_rgba(35,65,57,.06)]">
@@ -863,6 +1021,78 @@ export default function Home() {
             {view === 'settings' && (
               <>
                 <PageTitle title={t.settings} subtitle={t.offlineHint} />
+                <div className="mb-5 max-w-2xl rounded-[24px] border bg-white p-6">
+                  {!supabase ? (
+                    <div className="rounded-2xl bg-[#f1f6f3] p-4">
+                      <b className="text-[#2f776a]">{t.upgradeTitle}</b>
+                      <p className="text-sm text-slate-500">
+                        {t.backendNotConfigured}
+                      </p>
+                    </div>
+                  ) : profile.tier === 'pro' ? (
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f1f6f3] p-4">
+                      <div>
+                        <b className="text-[#2f776a]">{t.proActive}</b>
+                        <p className="text-sm text-slate-500">
+                          {t.signedInAs.replace('{email}', profile.email)}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          handleSignOut().catch((err: unknown) =>
+                            console.error('Failed to sign out', err),
+                          );
+                        }}
+                      >
+                        {t.signOut}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl bg-[#f1f6f3] p-4">
+                      <b className="text-[#2f776a]">{t.upgradeTitle}</b>
+                      <p className="text-sm text-slate-500">{t.upgradeHint}</p>
+                      {upgradeStatus === 'sent' ? (
+                        <p className="mt-3 text-sm font-semibold text-[#2f776a]">
+                          {t.magicLinkSent.replace('{email}', profile.email)}
+                        </p>
+                      ) : (
+                        <form
+                          onSubmit={(e) => {
+                            handleUpgradeSubmit(e).catch((err: unknown) =>
+                              console.error(
+                                'Failed to request magic link',
+                                err,
+                              ),
+                            );
+                          }}
+                          className="mt-3 flex flex-col gap-2 sm:flex-row"
+                        >
+                          <Input
+                            name="email"
+                            type="email"
+                            required
+                            defaultValue={profile.email}
+                            className="h-11 sm:flex-1"
+                          />
+                          <Button
+                            type="submit"
+                            disabled={upgradeStatus === 'sending'}
+                            className="bg-[#2f776a]"
+                          >
+                            {t.sendMagicLink}
+                          </Button>
+                        </form>
+                      )}
+                      {upgradeStatus === 'error' && (
+                        <p className="mt-2 text-sm text-[#b43e35]">
+                          {t.magicLinkError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
