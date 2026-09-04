@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  FormEvent,
-  KeyboardEvent,
-  PointerEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   CalendarDays,
@@ -134,6 +126,13 @@ const copy = {
     addSubgoal: 'Kichik maqsad qo‘shish',
     noSubgoals: 'Hozircha kichik maqsad yo‘q',
     autoProgressHint: 'Kichik maqsadlar asosida hisoblangan',
+    markDone: 'Bajarildi deb belgilash',
+    smartHintBig:
+      'Aniq va o‘lchanadigan maqsad qo‘ying — masalan, «Yiliga daromadni 20% oshirish».',
+    smartHintSub:
+      'Kichik, bajarilgani aniq biladigan qadam tanlang — masalan, «Har kuni 20 daqiqa mashq qilish».',
+    goalTitlePlaceholder: 'Masalan: Yiliga daromadni 20% ga oshirish',
+    subgoalTitlePlaceholder: 'Masalan: Har kuni 20 daqiqa mashq qilish',
     delete: 'O‘chirish',
     monthly: 'Oylik tahlil',
     win: 'Bu oyda eng yaxshi natijangiz nima bo‘ldi?',
@@ -232,6 +231,13 @@ const copy = {
     addSubgoal: 'Add sub-goal',
     noSubgoals: 'No sub-goals yet',
     autoProgressHint: 'Calculated from sub-goals',
+    markDone: 'Mark as done',
+    smartHintBig:
+      'Make it specific and measurable — e.g. "Grow yearly income by 20%".',
+    smartHintSub:
+      'Pick a small, clearly-checkable step — e.g. "Practice 20 minutes every day".',
+    goalTitlePlaceholder: 'e.g. Grow yearly income by 20%',
+    subgoalTitlePlaceholder: 'e.g. Practice 20 minutes every day',
     delete: 'Delete',
     monthly: 'Monthly review',
     win: 'What was your biggest win this month?',
@@ -329,6 +335,13 @@ const copy = {
     addSubgoal: 'Добавить подцель',
     noSubgoals: 'Пока нет подцелей',
     autoProgressHint: 'Рассчитано на основе подцелей',
+    markDone: 'Отметить как выполнено',
+    smartHintBig:
+      'Сформулируйте цель конкретно и измеримо — например, «Увеличить годовой доход на 20%».',
+    smartHintSub:
+      'Выберите маленький, чётко проверяемый шаг — например, «Заниматься по 20 минут каждый день».',
+    goalTitlePlaceholder: 'Например: Увеличить годовой доход на 20%',
+    subgoalTitlePlaceholder: 'Например: Заниматься по 20 минут каждый день',
     delete: 'Удалить',
     monthly: 'Ежемесячный обзор',
     win: 'Каков ваш главный результат за месяц?',
@@ -439,7 +452,7 @@ const initialGoals: Goal[] = [
     parentId: 3,
     area: 5,
     title: 'Har kuni 20 ta yangi so‘z yodlash',
-    progress: 85,
+    progress: 100,
     year: '2026',
     note: 'Kundalik lug‘at mashqi.',
   },
@@ -448,7 +461,7 @@ const initialGoals: Goal[] = [
     parentId: 3,
     area: 5,
     title: 'Haftada 3 marta suhbat klubi',
-    progress: 60,
+    progress: 0,
     year: '2026',
     note: 'Amaliy gapirish mashqi.',
   },
@@ -689,83 +702,6 @@ function PageTitle({ title, subtitle }: { title: string; subtitle: string }) {
         {title}
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-500">{subtitle}</p>
-    </div>
-  );
-}
-
-function ScoreSlider({
-  value,
-  onChange,
-  ariaLabel,
-  min = 1,
-  max = 10,
-  step = 1,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  ariaLabel: string;
-  min?: number;
-  max?: number;
-  step?: number;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  function valueFromClientX(clientX: number) {
-    const track = trackRef.current;
-    if (!track) return value;
-    const rect = track.getBoundingClientRect();
-    const fraction = rect.width
-      ? Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-      : 0;
-    const raw = min + fraction * (max - min);
-    return Math.min(max, Math.max(min, Math.round(raw / step) * step));
-  }
-
-  function handlePointerDown(e: PointerEvent<HTMLDivElement>) {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    onChange(valueFromClientX(e.clientX));
-  }
-
-  function handlePointerMove(e: PointerEvent<HTMLDivElement>) {
-    if (e.buttons === 0) return;
-    onChange(valueFromClientX(e.clientX));
-  }
-
-  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      onChange(Math.min(max, value + step));
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      onChange(Math.max(min, value - step));
-    }
-  }
-
-  const percent = ((value - min) / (max - min)) * 100;
-
-  return (
-    <div
-      ref={trackRef}
-      role="slider"
-      tabIndex={0}
-      aria-label={ariaLabel}
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={value}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onKeyDown={handleKeyDown}
-      className="relative flex h-6 w-full touch-none items-center select-none"
-    >
-      <div className="pointer-events-none absolute inset-x-0 h-2 rounded-full bg-[#e7ece8]" />
-      <div
-        className="pointer-events-none absolute h-2 rounded-full bg-[#2f776a]"
-        style={{ width: `${percent}%` }}
-      />
-      <div
-        className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white bg-[#2f776a] shadow-[0_1px_4px_rgba(35,65,57,.3)]"
-        style={{ left: `${percent}%` }}
-      />
     </div>
   );
 }
@@ -1478,9 +1414,22 @@ export default function Home() {
                   {parentGoal.title}
                 </p>
               )}
-              <form onSubmit={addGoal} className="mt-6 space-y-4">
+              <p className="mt-4 rounded-xl bg-[#f2f6f3] px-3.5 py-3 text-xs text-[#4b6359]">
+                💡 {parentGoal ? t.smartHintSub : t.smartHintBig}
+              </p>
+              <form onSubmit={addGoal} className="mt-4 space-y-4">
                 <Field label={t.title}>
-                  <Input name="title" required autoFocus className="h-11" />
+                  <Input
+                    name="title"
+                    required
+                    autoFocus
+                    placeholder={
+                      parentGoal
+                        ? t.subgoalTitlePlaceholder
+                        : t.goalTitlePlaceholder
+                    }
+                    className="h-11"
+                  />
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
                   {parentGoal ? (
@@ -1596,12 +1545,12 @@ export default function Home() {
                 {currentGoal.note}
               </p>
               <div className="mt-7">
-                <span className="flex justify-between">
-                  <b>{t.progressLabel}</b>
-                  <b>{progress}%</b>
-                </span>
                 {subgoals.length > 0 ? (
                   <>
+                    <span className="flex justify-between">
+                      <b>{t.progressLabel}</b>
+                      <b>{progress}%</b>
+                    </span>
                     <div className="mt-2 h-2 rounded-full bg-slate-100">
                       <div
                         className="h-full rounded-full"
@@ -1616,20 +1565,31 @@ export default function Home() {
                     </p>
                   </>
                 ) : (
-                  <ScoreSlider
-                    ariaLabel={t.progressLabel}
-                    min={0}
-                    max={100}
-                    step={5}
-                    value={currentGoal.progress}
-                    onChange={(v) =>
+                  <button
+                    onClick={() =>
                       setGoals(
                         goals.map((g) =>
-                          g.id === currentGoal.id ? { ...g, progress: v } : g,
+                          g.id === currentGoal.id
+                            ? { ...g, progress: g.progress === 100 ? 0 : 100 }
+                            : g,
                         ),
                       )
                     }
-                  />
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-[#fbfcfb] px-4 py-3.5 text-left"
+                  >
+                    <span
+                      className={`grid h-6 w-6 flex-none place-items-center rounded-full border-2 ${
+                        currentGoal.progress === 100
+                          ? 'border-[#2f776a] bg-[#2f776a] text-white'
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {currentGoal.progress === 100 && <Check size={14} />}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      {t.markDone}
+                    </span>
+                  </button>
                 )}
               </div>
               <div className="mt-7">
@@ -1649,21 +1609,37 @@ export default function Home() {
                 </div>
                 {subgoals.length ? (
                   <div className="mt-3 space-y-2">
-                    {subgoals.map((k) => (
-                      <button
-                        key={k.id}
-                        onClick={() => setSelectedGoal(k.id)}
-                        className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-[#fbfcfb] px-4 py-3 text-left hover:bg-slate-50"
-                      >
-                        <span className="text-sm font-semibold">
-                          {k.title}
-                        </span>
-                        <span className="flex items-center gap-2 text-xs text-slate-400">
-                          {effectiveProgress(k, goals)}%
-                          <ChevronRight size={16} />
-                        </span>
-                      </button>
-                    ))}
+                    {subgoals.map((k) => {
+                      const kKids = childrenOf(goals, k.id),
+                        kDone = k.progress === 100;
+                      return (
+                        <button
+                          key={k.id}
+                          onClick={() => setSelectedGoal(k.id)}
+                          className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-[#fbfcfb] px-4 py-3 text-left hover:bg-slate-50"
+                        >
+                          <span className="flex items-center gap-2.5 text-sm font-semibold">
+                            {!kKids.length && (
+                              <span
+                                className={`grid h-5 w-5 flex-none place-items-center rounded-full border-2 ${
+                                  kDone
+                                    ? 'border-[#2f776a] bg-[#2f776a] text-white'
+                                    : 'border-slate-300'
+                                }`}
+                              >
+                                {kDone && <Check size={12} />}
+                              </span>
+                            )}
+                            {k.title}
+                          </span>
+                          <span className="flex items-center gap-2 text-xs text-slate-400">
+                            {kKids.length > 0 &&
+                              `${effectiveProgress(k, goals)}%`}
+                            <ChevronRight size={16} />
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-slate-400">
