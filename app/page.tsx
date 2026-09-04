@@ -87,6 +87,8 @@ const copy = {
     rideRoughLabel: 'Qiyin aylanmoqda',
     rideRoughCaption:
       'Ko‘p soha e’tiborsiz qolgan — g‘ildirak yo‘lda qiynalib aylanmoqda.',
+    rideWhy: 'Nega bunday?',
+    rideWhyHint: 'Har bir soha g‘ildirakning shaklini belgilaydi.',
     update: 'Baholashni saqlash',
     progress: 'Faol maqsadlar',
     allGoals: 'Barcha maqsadlar',
@@ -192,6 +194,8 @@ const copy = {
     rideRoughLabel: 'Struggling to turn',
     rideRoughCaption:
       'Several areas need attention — the wheel is fighting the road.',
+    rideWhy: 'Why does it look like this?',
+    rideWhyHint: 'Each area shapes the wheel.',
     update: 'Save assessment',
     progress: 'Active goals',
     allGoals: 'View all goals',
@@ -295,6 +299,8 @@ const copy = {
       'Некоторые сферы отстают — колесо катится с лёгкими толчками.',
     rideRoughLabel: 'Едет с трудом',
     rideRoughCaption: 'Многие сферы требуют внимания — колесу тяжело катиться.',
+    rideWhy: 'Почему такая форма?',
+    rideWhyHint: 'Каждая сфера формирует форму колеса.',
     update: 'Сохранить оценку',
     progress: 'Активные цели',
     allGoals: 'Все цели',
@@ -564,6 +570,7 @@ function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
 
 function WheelRide({
   scores,
+  labels,
   title,
   smoothLabel,
   smoothCaption,
@@ -571,8 +578,11 @@ function WheelRide({
   unevenCaption,
   roughLabel,
   roughCaption,
+  whyTitle,
+  whyHint,
 }: {
   scores: number[];
+  labels: string[];
   title: string;
   smoothLabel: string;
   smoothCaption: string;
@@ -580,6 +590,8 @@ function WheelRide({
   unevenCaption: string;
   roughLabel: string;
   roughCaption: string;
+  whyTitle: string;
+  whyHint: string;
 }) {
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length,
     stdDev = Math.sqrt(
@@ -648,6 +660,13 @@ function WheelRide({
             />
             <circle cx={c} cy={c} r="7" fill="#2f776a" />
           </svg>
+        </div>
+      </div>
+      <div className="border-t border-slate-100 px-6 py-5">
+        <h3 className="text-sm font-bold">{whyTitle}</h3>
+        <p className="mt-0.5 text-xs text-slate-400">{whyHint}</p>
+        <div className="mt-4">
+          <LifeWheel labels={labels} scores={scores} />
         </div>
       </div>
     </section>
@@ -1168,6 +1187,7 @@ export default function Home() {
                 <div className="grid items-start gap-5 xl:grid-cols-[1.35fr_.85fr]">
                   <WheelRide
                     scores={scores}
+                    labels={labels}
                     title={t.rideTitle}
                     smoothLabel={t.rideSmoothLabel}
                     smoothCaption={t.rideSmoothCaption}
@@ -1175,6 +1195,8 @@ export default function Home() {
                     unevenCaption={t.rideUnevenCaption}
                     roughLabel={t.rideRoughLabel}
                     roughCaption={t.rideRoughCaption}
+                    whyTitle={t.rideWhy}
+                    whyHint={t.rideWhyHint}
                   />
                   <div className="grid gap-5">
                     <section className="rounded-[24px] bg-[#244f48] p-6 text-white">
