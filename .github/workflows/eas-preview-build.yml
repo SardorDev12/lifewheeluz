@@ -1,0 +1,46 @@
+name: EAS Preview Build
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'mobile/**'
+      - 'packages/shared/**'
+      - '.github/workflows/eas-preview-build.yml'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        required: false
+        default: android
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+
+jobs:
+  build:
+    name: Trigger EAS preview build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # eas build uploads the project and builds remotely on EAS's own
+      # infrastructure, which installs dependencies itself — no local
+      # pnpm install needed here.
+      - name: Trigger preview build
+        working-directory: mobile
+        run: eas build --profile preview --platform ${{ inputs.platform || 'android' }} --non-interactive --no-wait
