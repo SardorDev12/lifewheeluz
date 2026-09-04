@@ -858,10 +858,14 @@ export default function Home() {
     ] as const,
     weakest = scores.indexOf(Math.min(...scores)),
     currentGoal = goals.find((g) => g.id === selectedGoal),
-    lastMonthLabel = t.monthlyAnalysisSubtitle.replace('{month}', (() => {
-      const name = monthNames[locale][(new Date().getMonth() - 1 + 12) % 12];
-      return locale === 'ru' ? name : name[0].toUpperCase() + name.slice(1);
-    })()),
+    monthlyLabelFor = (date: Date) => {
+      if (Number.isNaN(date.getTime())) return '';
+      const name = monthNames[locale][(date.getMonth() - 1 + 12) % 12],
+        capitalized =
+          locale === 'ru' ? name : name[0].toUpperCase() + name.slice(1);
+      return t.monthlyAnalysisSubtitle.replace('{month}', capitalized);
+    },
+    lastMonthLabel = monthlyLabelFor(new Date()),
     hasReviewedThisMonth = reviews.some((r) => {
       const created = new Date(r.createdAt),
         now = new Date();
@@ -1293,31 +1297,41 @@ export default function Home() {
                   </Button>
                 </div>
                 <div className="space-y-4">
-                  {reviews.map((r) => (
-                    <article
-                      key={r.id}
-                      className="rounded-[22px] border bg-white p-6"
-                    >
-                      <b className="flex gap-2 text-[#2f776a]">
-                        <CheckCircle2 size={18} />
-                        {r.date}
-                      </b>
-                      <div className="mt-4 grid gap-4 md:grid-cols-3">
-                        {[
-                          [t.win, r.win],
-                          [t.lesson, r.lesson],
-                          [t.nextMonth, r.next],
-                        ].map(([l, v]) => (
-                          <div key={l}>
-                            <small className="font-bold text-slate-400">
-                              {l}
-                            </small>
-                            <p className="mt-1 text-sm">{v}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </article>
-                  ))}
+                  {reviews.map((r) => {
+                    const reviewMonthLabel = monthlyLabelFor(
+                      new Date(r.createdAt),
+                    );
+                    return (
+                      <article
+                        key={r.id}
+                        className="rounded-[22px] border bg-white p-6"
+                      >
+                        <b className="flex items-center gap-2 text-[#2f776a]">
+                          <CheckCircle2 size={18} />
+                          {r.date}
+                        </b>
+                        {reviewMonthLabel && (
+                          <p className="mt-1 text-xs text-slate-400">
+                            {reviewMonthLabel}
+                          </p>
+                        )}
+                        <div className="mt-4 grid gap-4 md:grid-cols-3">
+                          {[
+                            [t.win, r.win],
+                            [t.lesson, r.lesson],
+                            [t.nextMonth, r.next],
+                          ].map(([l, v]) => (
+                            <div key={l}>
+                              <small className="font-bold text-slate-400">
+                                {l}
+                              </small>
+                              <p className="mt-1 text-sm">{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </article>
+                    );
+                  })}
                   {!reviews.length && (
                     <button
                       onClick={() => setModal('review')}
