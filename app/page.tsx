@@ -26,460 +26,30 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-type Locale = 'uz' | 'en' | 'ru';
-type View = 'today' | 'life' | 'goals' | 'reviews' | 'settings';
-type Goal = {
-  id: number;
-  parentId: number | null;
-  area: number;
-  title: string;
-  progress: number;
-  year: string;
-  note: string;
-};
-type Review = {
-  id: number;
-  date: string;
-  createdAt: string;
-  win: string;
-  lesson: string;
-  next: string;
-};
-const copy = {
-  uz: {
-    greeting: 'Xayrli tong, Aziz',
-    subtitle: 'Bugun hayotingizni bir qadam oldinga olib boring.',
-    today: 'Bugun',
-    life: 'Hayotim',
-    goals: 'Maqsadlar',
-    reviews: 'Tahlillar',
-    settings: 'Sozlamalar',
-    overview: 'Bugungi ko‘rinish',
-    done: 'Bajarildi',
-    wheel: 'Hayot g‘ildiragi',
-    wheelHint: 'Har bir sohani 1 dan 10 gacha baholang.',
-    scoreMeanings: [
-      'Inqiroz — zudlik bilan e’tibor kerak',
-      'Juda og‘ir holat',
-      'Tez-tez norozilik uyg‘otadi',
-      'Xohlaganimdan past',
-      'Aralash — ba’zisi yaxshi, ba’zisi yo‘q',
-      'Yomon emas, o‘sish joyi bor',
-      'Asosan yaxshi',
-      'Yaxshi ketmoqda',
-      'Zo‘r ketmoqda',
-      'Bundan a’lo bo‘lishi mumkin emas',
-    ],
-    rideTitle: 'Bugungi harakat',
-    rideSmoothLabel: 'Silliq aylanmoqda',
-    rideSmoothCaption:
-      'Sohalaringiz muvozanatli — g‘ildirak yo‘lda tekis harakatlanmoqda.',
-    rideUnevenLabel: 'Biroz notekis',
-    rideUnevenCaption:
-      'Ba’zi sohalar orqada qolmoqda — g‘ildirak sal g‘adir-budur aylanmoqda.',
-    rideRoughLabel: 'Qiyin aylanmoqda',
-    rideRoughCaption:
-      'Ko‘p soha e’tiborsiz qolgan — g‘ildirak yo‘lda qiynalib aylanmoqda.',
-    rideWhy: 'Nega bunday?',
-    rideWhyHint: 'Har bir soha g‘ildirakning shaklini belgilaydi.',
-    reassess: 'Qayta tahlil qilish',
-    update: 'Baholashni saqlash',
-    progress: 'Faol maqsadlar',
-    allGoals: 'Barcha maqsadlar',
-    years: 'Uzoq muddatli',
-    monthlyAnalysis: 'Oylik tahlil',
-    monthlyAnalysisSubtitle: '{month} oyi tahlili',
-    start: 'Tahlilni boshlash',
-    add: 'Maqsad qo‘shish',
-    health: 'Sog‘liq',
-    career: 'Kasb',
-    finance: 'Moliya',
-    relations: 'Munosabatlar',
-    family: 'Oila',
-    growth: 'Rivojlanish',
-    fun: 'Hordiq',
-    environment: 'Muhit',
-    title: 'Maqsad nomi',
-    area: 'Hayot sohasi',
-    year: 'Maqsad yili',
-    motivation: 'Nega bu muhim?',
-    create: 'Maqsad yaratish',
-    cancel: 'Bekor qilish',
-    saved: 'Saqlandi',
-    assessment: 'Baholash',
-    assessmentText:
-      'Hozirgi holatingizni halol baholang. Natija keyingi ustuvorlikni aniqlashga yordam beradi.',
-    reset: 'Qayta boshlash',
-    avg: 'O‘rtacha ball',
-    weakest: 'E’tibor talab qiladi',
-    goalCount: 'faol maqsad',
-    noGoals: 'Hozircha maqsad yo‘q',
-    editGoal: 'Maqsadni boshqarish',
-    progressLabel: 'Jarayon',
-    subgoals: 'kichik maqsad',
-    subgoalsTitle: 'Kichik maqsadlar',
-    addSubgoal: 'Kichik maqsad qo‘shish',
-    noSubgoals: 'Hozircha kichik maqsad yo‘q',
-    autoProgressHint: 'Kichik maqsadlar asosida hisoblangan',
-    markDone: 'Bajarildi deb belgilash',
-    smartHintBig:
-      'Aniq va o‘lchanadigan maqsad qo‘ying — masalan, «Yiliga daromadni 20% oshirish».',
-    smartHintSub:
-      'Kichik, bajarilgani aniq biladigan qadam tanlang — masalan, «Har kuni 20 daqiqa mashq qilish».',
-    goalTitlePlaceholder: 'Masalan: Yiliga daromadni 20% ga oshirish',
-    subgoalTitlePlaceholder: 'Masalan: Har kuni 20 daqiqa mashq qilish',
-    delete: 'O‘chirish',
-    monthly: 'Oylik tahlil',
-    win: 'Bu oyda eng yaxshi natijangiz nima bo‘ldi?',
-    lesson: 'Nimani o‘rgandingiz?',
-    nextMonth: 'Keyingi oyda asosiy e’tibor nimada?',
-    finish: 'Tahlilni yakunlash',
-    history: 'Tahlillar tarixi',
-    noReviews: 'Birinchi tahlilingizni boshlang.',
-    profile: 'Profil',
-    name: 'Ism',
-    email: 'Elektron pochta',
-    language: 'Til',
-    saveSettings: 'Sozlamalarni saqlash',
-    offline: 'Qurilmada saqlanmoqda',
-    offlineHint:
-      'Supabase ulangach ma’lumotlar hisobingiz bilan sinxronlanadi.',
-    assessmentSaved: 'Yangi baholash saqlandi.',
-    goalCreated: 'Yangi maqsad yaratildi.',
-    reviewSaved: 'Oylik tahlil yakunlandi.',
-  },
-  en: {
-    greeting: 'Good morning, Aziz',
-    subtitle: 'Move your life one intentional step forward today.',
-    today: 'Today',
-    life: 'My Life',
-    goals: 'Goals',
-    reviews: 'Reviews',
-    settings: 'Settings',
-    overview: 'Today at a glance',
-    done: 'Complete',
-    wheel: 'Wheel of Life',
-    wheelHint: 'Rate each area from 1 to 10.',
-    scoreMeanings: [
-      'Crisis — needs urgent attention',
-      'Really struggling',
-      'Frequently frustrating',
-      'Below where I want to be',
-      'Mixed — some good, some not',
-      'Not bad, room to grow',
-      'Mostly good',
-      'Doing well',
-      'Thriving',
-      'Couldn’t be better',
-    ],
-    rideTitle: 'Today’s ride',
-    rideSmoothLabel: 'Rolling smooth',
-    rideSmoothCaption:
-      'Your areas are balanced — the wheel is gliding evenly down the road.',
-    rideUnevenLabel: 'A little uneven',
-    rideUnevenCaption:
-      'A few areas are lagging — the wheel is rolling a bit bumpy.',
-    rideRoughLabel: 'Struggling to turn',
-    rideRoughCaption:
-      'Several areas need attention — the wheel is fighting the road.',
-    rideWhy: 'Why does it look like this?',
-    rideWhyHint: 'Each area shapes the wheel.',
-    reassess: 'Reassess your wheel',
-    update: 'Save assessment',
-    progress: 'Active goals',
-    allGoals: 'View all goals',
-    years: 'Long-term',
-    monthlyAnalysis: 'Monthly analysis',
-    monthlyAnalysisSubtitle: '{month} analysis',
-    start: 'Start review',
-    add: 'Add goal',
-    health: 'Health',
-    career: 'Career',
-    finance: 'Finances',
-    relations: 'Relationships',
-    family: 'Family',
-    growth: 'Growth',
-    fun: 'Recreation',
-    environment: 'Environment',
-    title: 'Goal title',
-    area: 'Life area',
-    year: 'Target year',
-    motivation: 'Why does this matter?',
-    create: 'Create goal',
-    cancel: 'Cancel',
-    saved: 'Saved',
-    assessment: 'Assessment',
-    assessmentText:
-      'Rate where you are honestly. The result helps you choose your next priority.',
-    reset: 'Start over',
-    avg: 'Average score',
-    weakest: 'Needs attention',
-    goalCount: 'active goals',
-    noGoals: 'No goals yet',
-    editGoal: 'Manage goal',
-    progressLabel: 'Progress',
-    subgoals: 'sub-goals',
-    subgoalsTitle: 'Sub-goals',
-    addSubgoal: 'Add sub-goal',
-    noSubgoals: 'No sub-goals yet',
-    autoProgressHint: 'Calculated from sub-goals',
-    markDone: 'Mark as done',
-    smartHintBig:
-      'Make it specific and measurable — e.g. "Grow yearly income by 20%".',
-    smartHintSub:
-      'Pick a small, clearly-checkable step — e.g. "Practice 20 minutes every day".',
-    goalTitlePlaceholder: 'e.g. Grow yearly income by 20%',
-    subgoalTitlePlaceholder: 'e.g. Practice 20 minutes every day',
-    delete: 'Delete',
-    monthly: 'Monthly review',
-    win: 'What was your biggest win this month?',
-    lesson: 'What did you learn?',
-    nextMonth: 'What will you focus on next month?',
-    finish: 'Complete review',
-    history: 'Review history',
-    noReviews: 'Start your first review.',
-    profile: 'Profile',
-    name: 'Name',
-    email: 'Email',
-    language: 'Language',
-    saveSettings: 'Save settings',
-    offline: 'Saving on this device',
-    offlineHint:
-      'Your data will sync with your account after Supabase is connected.',
-    assessmentSaved: 'New assessment saved.',
-    goalCreated: 'New goal created.',
-    reviewSaved: 'Monthly review completed.',
-  },
-  ru: {
-    greeting: 'Доброе утро, Азиз',
-    subtitle: 'Сделайте сегодня один осознанный шаг вперёд.',
-    today: 'Сегодня',
-    life: 'Моя жизнь',
-    goals: 'Цели',
-    reviews: 'Обзоры',
-    settings: 'Настройки',
-    overview: 'Сегодняшний обзор',
-    done: 'Выполнить',
-    wheel: 'Колесо жизни',
-    wheelHint: 'Оцените каждую сферу от 1 до 10.',
-    scoreMeanings: [
-      'Кризис — нужно срочное внимание',
-      'Очень тяжело',
-      'Часто расстраивает',
-      'Ниже, чем хотелось бы',
-      'Смешанно — что-то хорошо, что-то нет',
-      'Неплохо, есть куда расти',
-      'В основном хорошо',
-      'Всё идёт хорошо',
-      'Прекрасно',
-      'Лучше не бывает',
-    ],
-    rideTitle: 'Сегодняшняя езда',
-    rideSmoothLabel: 'Катится гладко',
-    rideSmoothCaption: 'Сферы сбалансированы — колесо ровно катится по дороге.',
-    rideUnevenLabel: 'Немного неровно',
-    rideUnevenCaption:
-      'Некоторые сферы отстают — колесо катится с лёгкими толчками.',
-    rideRoughLabel: 'Едет с трудом',
-    rideRoughCaption: 'Многие сферы требуют внимания — колесу тяжело катиться.',
-    rideWhy: 'Почему такая форма?',
-    rideWhyHint: 'Каждая сфера формирует форму колеса.',
-    reassess: 'Пройти оценку заново',
-    update: 'Сохранить оценку',
-    progress: 'Активные цели',
-    allGoals: 'Все цели',
-    years: 'Долгосрочная',
-    monthlyAnalysis: 'Ежемесячный анализ',
-    monthlyAnalysisSubtitle: 'Анализ за {month}',
-    start: 'Начать обзор',
-    add: 'Добавить цель',
-    health: 'Здоровье',
-    career: 'Карьера',
-    finance: 'Финансы',
-    relations: 'Отношения',
-    family: 'Семья',
-    growth: 'Развитие',
-    fun: 'Отдых',
-    environment: 'Окружение',
-    title: 'Название цели',
-    area: 'Сфера жизни',
-    year: 'Целевой год',
-    motivation: 'Почему это важно?',
-    create: 'Создать цель',
-    cancel: 'Отмена',
-    saved: 'Сохранено',
-    assessment: 'Оценка',
-    assessmentText:
-      'Честно оцените текущее состояние. Результат поможет выбрать следующий приоритет.',
-    reset: 'Начать заново',
-    avg: 'Средний балл',
-    weakest: 'Требует внимания',
-    goalCount: 'активных целей',
-    noGoals: 'Целей пока нет',
-    editGoal: 'Управление целью',
-    progressLabel: 'Прогресс',
-    subgoals: 'подцелей',
-    subgoalsTitle: 'Подцели',
-    addSubgoal: 'Добавить подцель',
-    noSubgoals: 'Пока нет подцелей',
-    autoProgressHint: 'Рассчитано на основе подцелей',
-    markDone: 'Отметить как выполнено',
-    smartHintBig:
-      'Сформулируйте цель конкретно и измеримо — например, «Увеличить годовой доход на 20%».',
-    smartHintSub:
-      'Выберите маленький, чётко проверяемый шаг — например, «Заниматься по 20 минут каждый день».',
-    goalTitlePlaceholder: 'Например: Увеличить годовой доход на 20%',
-    subgoalTitlePlaceholder: 'Например: Заниматься по 20 минут каждый день',
-    delete: 'Удалить',
-    monthly: 'Ежемесячный обзор',
-    win: 'Каков ваш главный результат за месяц?',
-    lesson: 'Чему вы научились?',
-    nextMonth: 'На чём сосредоточитесь в следующем месяце?',
-    finish: 'Завершить обзор',
-    history: 'История обзоров',
-    noReviews: 'Начните свой первый обзор.',
-    profile: 'Профиль',
-    name: 'Имя',
-    email: 'Электронная почта',
-    language: 'Язык',
-    saveSettings: 'Сохранить настройки',
-    offline: 'Сохраняется на устройстве',
-    offlineHint:
-      'После подключения Supabase данные синхронизируются с аккаунтом.',
-    assessmentSaved: 'Новая оценка сохранена.',
-    goalCreated: 'Новая цель создана.',
-    reviewSaved: 'Ежемесячный обзор завершён.',
-  },
-};
-const monthNames: Record<Locale, string[]> = {
-  uz: [
-    'yanvar',
-    'fevral',
-    'mart',
-    'aprel',
-    'may',
-    'iyun',
-    'iyul',
-    'avgust',
-    'sentabr',
-    'oktabr',
-    'noyabr',
-    'dekabr',
-  ],
-  en: [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ],
-  ru: [
-    'январь',
-    'февраль',
-    'март',
-    'апрель',
-    'май',
-    'июнь',
-    'июль',
-    'август',
-    'сентябрь',
-    'октябрь',
-    'ноябрь',
-    'декабрь',
-  ],
-};
-const initialScores = [6, 7, 5, 8, 7, 6, 4, 7],
-  colors = [
-    '#e26552',
-    '#5b7fbd',
-    '#e2a849',
-    '#b56797',
-    '#4b9a8c',
-    '#7768b6',
-    '#d47b43',
-    '#60946b',
-  ];
-const initialGoals: Goal[] = [
-  {
-    id: 1,
-    parentId: null,
-    area: 1,
-    title: 'Product rahbari bo‘lish',
-    progress: 64,
-    year: '2029',
-    note: 'Strategik fikrlash va jamoa yetakchiligini rivojlantirish.',
-  },
-  {
-    id: 2,
-    parentId: null,
-    area: 2,
-    title: 'Moliyaviy zaxira yaratish',
-    progress: 42,
-    year: '2028',
-    note: '12 oylik xarajatlarni qoplaydigan xavfsizlik fondi.',
-  },
-  {
-    id: 3,
-    parentId: null,
-    area: 5,
-    title: 'Ingliz tilida erkin gapirish',
-    progress: 78,
-    year: '2027',
-    note: 'Har kuni 30 daqiqa faol mashq.',
-  },
-  {
-    id: 4,
-    parentId: 3,
-    area: 5,
-    title: 'Har kuni 20 ta yangi so‘z yodlash',
-    progress: 100,
-    year: '2026',
-    note: 'Kundalik lug‘at mashqi.',
-  },
-  {
-    id: 5,
-    parentId: 3,
-    area: 5,
-    title: 'Haftada 3 marta suhbat klubi',
-    progress: 0,
-    year: '2026',
-    note: 'Amaliy gapirish mashqi.',
-  },
-];
-function childrenOf(goals: Goal[], parentId: number) {
-  return goals.filter((g) => g.parentId === parentId);
-}
-function effectiveProgress(goal: Goal, goals: Goal[]): number {
-  const kids = childrenOf(goals, goal.id);
-  if (!kids.length) return goal.progress;
-  return Math.round(
-    kids.reduce((sum, k) => sum + effectiveProgress(k, goals), 0) / kids.length,
-  );
-}
-function descendantIds(goals: Goal[], id: number): number[] {
-  return childrenOf(goals, id).flatMap((k) => [
-    k.id,
-    ...descendantIds(goals, k.id),
-  ]);
-}
+import {
+  childrenOf,
+  colors,
+  computeWheelRideStats,
+  copy,
+  descendantIds,
+  effectiveProgress,
+  getAreaLabels,
+  hasReviewedThisMonth as computeHasReviewedThisMonth,
+  initialGoals,
+  initialScores,
+  monthlyLabelFor,
+  polarPoint,
+  type Goal,
+  type Locale,
+  type Review,
+  type View,
+} from '@lifewheeluz/shared';
 
 function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
   const size = 310,
     c = size / 2,
     r = 104,
-    p = (i: number, v: number) => {
-      const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2,
-        d = (r * v) / 10;
-      return [c + Math.cos(a) * d, c + Math.sin(a) * d];
-    };
+    p = (i: number, v: number) => polarPoint(i, v, scores.length, r, c);
   return (
     <div
       className="relative mx-auto aspect-square w-full max-w-[310px]"
@@ -572,25 +142,16 @@ function WheelRide({
   reassessLabel: string;
   onReassess: () => void;
 }) {
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length,
-    stdDev = Math.sqrt(
-      scores.reduce((a, b) => a + (b - avg) ** 2, 0) / scores.length,
-    ),
-    bounce = Math.min(14, stdDev * 3.2),
-    duration = Math.min(9, 3.5 + stdDev * 2),
+  const { bounce, duration, tier } = computeWheelRideStats(scores),
     [label, caption] =
-      stdDev < 0.9
+      tier === 'smooth'
         ? [smoothLabel, smoothCaption]
-        : stdDev < 2
+        : tier === 'uneven'
           ? [unevenLabel, unevenCaption]
           : [roughLabel, roughCaption],
     c = 60,
     r = 42,
-    p = (i: number, v: number) => {
-      const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2,
-        d = (r * v) / 10;
-      return [c + Math.cos(a) * d, c + Math.sin(a) * d];
-    };
+    p = (i: number, v: number) => polarPoint(i, v, scores.length, r, c);
   return (
     <section className="overflow-hidden rounded-[24px] border border-[#dfe5df] bg-white shadow-[0_12px_40px_rgba(35,65,57,.06)]">
       <div className="px-6 pt-5">
@@ -835,19 +396,7 @@ export default function Home() {
     }),
     [hydrated, setHydrated] = useState(false);
   const t = copy[locale],
-    labels = useMemo(
-      () => [
-        t.health,
-        t.career,
-        t.finance,
-        t.relations,
-        t.family,
-        t.growth,
-        t.fun,
-        t.environment,
-      ],
-      [t],
-    ),
+    labels = useMemo(() => getAreaLabels(locale), [locale]),
     nav = [
       [t.today, LayoutDashboard, 'today'],
       [t.life, Compass, 'life'],
@@ -856,23 +405,8 @@ export default function Home() {
     ] as const,
     weakest = scores.indexOf(Math.min(...scores)),
     currentGoal = goals.find((g) => g.id === selectedGoal),
-    monthlyLabelFor = (date: Date) => {
-      if (Number.isNaN(date.getTime())) return '';
-      const name = monthNames[locale][(date.getMonth() - 1 + 12) % 12],
-        capitalized =
-          locale === 'ru' ? name : name[0].toUpperCase() + name.slice(1);
-      return t.monthlyAnalysisSubtitle.replace('{month}', capitalized);
-    },
-    lastMonthLabel = monthlyLabelFor(new Date()),
-    hasReviewedThisMonth = reviews.some((r) => {
-      const created = new Date(r.createdAt),
-        now = new Date();
-      return (
-        !Number.isNaN(created.getTime()) &&
-        created.getFullYear() === now.getFullYear() &&
-        created.getMonth() === now.getMonth()
-      );
-    });
+    lastMonthLabel = monthlyLabelFor(new Date(), locale),
+    hasReviewedThisMonth = computeHasReviewedThisMonth(reviews);
   useEffect(() => {
     try {
       const raw = localStorage.getItem('muvozanat-draft');
@@ -1282,6 +816,7 @@ export default function Home() {
                   {reviews.map((r) => {
                     const reviewMonthLabel = monthlyLabelFor(
                       new Date(r.createdAt),
+                      locale,
                     );
                     return (
                       <article
