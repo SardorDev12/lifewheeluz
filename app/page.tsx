@@ -48,6 +48,7 @@ type Goal = {
 type Review = {
   id: number;
   date: string;
+  createdAt: string;
   win: string;
   lesson: string;
   next: string;
@@ -98,6 +99,7 @@ const copy = {
     years: 'Uzoq muddatli',
     review: 'Keyingi oylik tahlil',
     monthlyAnalysis: 'Oylik tahlil',
+    monthlyAnalysisSubtitle: '{month} oyi tahlili',
     start: 'Tahlilni boshlash',
     add: 'Maqsad qo‘shish',
     health: 'Sog‘liq',
@@ -191,6 +193,7 @@ const copy = {
     years: 'Long-term',
     review: 'Next monthly review',
     monthlyAnalysis: 'Monthly analysis',
+    monthlyAnalysisSubtitle: '{month} analysis',
     start: 'Start review',
     add: 'Add goal',
     health: 'Health',
@@ -283,6 +286,7 @@ const copy = {
     years: 'Долгосрочная',
     review: 'Следующий месячный обзор',
     monthlyAnalysis: 'Ежемесячный анализ',
+    monthlyAnalysisSubtitle: 'Анализ за {month}',
     start: 'Начать обзор',
     add: 'Добавить цель',
     health: 'Здоровье',
@@ -362,18 +366,18 @@ const monthNames: Record<Locale, string[]> = {
     'December',
   ],
   ru: [
-    'января',
-    'февраля',
-    'марта',
-    'апреля',
-    'мая',
-    'июня',
-    'июля',
-    'августа',
-    'сентября',
-    'октября',
-    'ноября',
-    'декабря',
+    'январь',
+    'февраль',
+    'март',
+    'апрель',
+    'май',
+    'июнь',
+    'июль',
+    'август',
+    'сентябрь',
+    'октябрь',
+    'ноябрь',
+    'декабрь',
   ],
 };
 const initialScores = [6, 7, 5, 8, 7, 6, 4, 7],
@@ -857,13 +861,19 @@ export default function Home() {
     ] as const,
     weakest = scores.indexOf(Math.min(...scores)),
     currentGoal = goals.find((g) => g.id === selectedGoal),
-    lastDayOfMonth = (() => {
-      const now = new Date(),
-        last = new Date(now.getFullYear(), now.getMonth() + 1, 0),
-        day = last.getDate(),
-        month = monthNames[locale][last.getMonth()];
-      return locale === 'en' ? `${month} ${day}` : `${day} ${month}`;
-    })();
+    lastMonthLabel = t.monthlyAnalysisSubtitle.replace('{month}', (() => {
+      const name = monthNames[locale][(new Date().getMonth() - 1 + 12) % 12];
+      return locale === 'ru' ? name : name[0].toUpperCase() + name.slice(1);
+    })()),
+    hasReviewedThisMonth = reviews.some((r) => {
+      const created = new Date(r.createdAt),
+        now = new Date();
+      return (
+        !Number.isNaN(created.getTime()) &&
+        created.getFullYear() === now.getFullYear() &&
+        created.getMonth() === now.getMonth()
+      );
+    });
   useEffect(() => {
     try {
       const raw = localStorage.getItem('muvozanat-draft');
@@ -929,6 +939,7 @@ export default function Home() {
       {
         id: Date.now(),
         date: new Date().toLocaleDateString(locale),
+        createdAt: new Date().toISOString(),
         win: String(f.get('win')),
         lesson: String(f.get('lesson')),
         next: String(f.get('next')),
@@ -1185,25 +1196,27 @@ export default function Home() {
                         </div>
                       </div>
                     </section>
-                    <section className="rounded-[24px] border bg-[#fff8f3] p-6">
-                      <p className="text-xs font-bold uppercase text-[#bc6d4f]">
-                        {t.review}
-                      </p>
-                      <h2 className="mt-3 font-heading text-2xl font-bold">
-                        {t.monthlyAnalysis}
-                      </h2>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {lastDayOfMonth}
-                      </p>
-                      <Button
-                        onClick={() => setModal('review')}
-                        variant="outline"
-                        className="mt-6 w-full"
-                      >
-                        {t.start}
-                        <ArrowRight />
-                      </Button>
-                    </section>
+                    {!hasReviewedThisMonth && (
+                      <section className="rounded-[24px] border bg-[#fff8f3] p-6">
+                        <p className="text-xs font-bold uppercase text-[#bc6d4f]">
+                          {t.review}
+                        </p>
+                        <h2 className="mt-3 font-heading text-2xl font-bold">
+                          {t.monthlyAnalysis}
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {lastMonthLabel}
+                        </p>
+                        <Button
+                          onClick={() => setModal('review')}
+                          variant="outline"
+                          className="mt-6 w-full"
+                        >
+                          {t.start}
+                          <ArrowRight />
+                        </Button>
+                      </section>
+                    )}
                   </div>
                 </div>
                 <section className="mt-6 rounded-[24px] border bg-white p-6">
