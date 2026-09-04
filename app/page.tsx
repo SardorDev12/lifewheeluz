@@ -83,6 +83,7 @@ const copy = {
       'Ko‘p soha e’tiborsiz qolgan — g‘ildirak yo‘lda qiynalib aylanmoqda.',
     rideWhy: 'Nega bunday?',
     rideWhyHint: 'Har bir soha g‘ildirakning shaklini belgilaydi.',
+    reassess: 'Qayta tahlil qilish',
     update: 'Baholashni saqlash',
     progress: 'Faol maqsadlar',
     allGoals: 'Barcha maqsadlar',
@@ -184,6 +185,7 @@ const copy = {
       'Several areas need attention — the wheel is fighting the road.',
     rideWhy: 'Why does it look like this?',
     rideWhyHint: 'Each area shapes the wheel.',
+    reassess: 'Reassess your wheel',
     update: 'Save assessment',
     progress: 'Active goals',
     allGoals: 'View all goals',
@@ -283,6 +285,7 @@ const copy = {
     rideRoughCaption: 'Многие сферы требуют внимания — колесу тяжело катиться.',
     rideWhy: 'Почему такая форма?',
     rideWhyHint: 'Каждая сфера формирует форму колеса.',
+    reassess: 'Пройти оценку заново',
     update: 'Сохранить оценку',
     progress: 'Активные цели',
     allGoals: 'Все цели',
@@ -552,6 +555,8 @@ function WheelRide({
   roughCaption,
   whyTitle,
   whyHint,
+  reassessLabel,
+  onReassess,
 }: {
   scores: number[];
   labels: string[];
@@ -564,6 +569,8 @@ function WheelRide({
   roughCaption: string;
   whyTitle: string;
   whyHint: string;
+  reassessLabel: string;
+  onReassess: () => void;
 }) {
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length,
     stdDev = Math.sqrt(
@@ -640,6 +647,10 @@ function WheelRide({
         <div className="mt-4">
           <LifeWheel labels={labels} scores={scores} />
         </div>
+        <Button onClick={onReassess} variant="outline" className="mt-5 w-full">
+          <Compass />
+          {reassessLabel}
+        </Button>
       </div>
     </section>
   );
@@ -1161,6 +1172,8 @@ export default function Home() {
                     roughCaption={t.rideRoughCaption}
                     whyTitle={t.rideWhy}
                     whyHint={t.rideWhyHint}
+                    reassessLabel={t.reassess}
+                    onReassess={() => setView('life')}
                   />
                   <div className="grid gap-5">
                     {!hasReviewedThisMonth && (
