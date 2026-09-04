@@ -76,8 +76,6 @@ describe('descendantIds', () => {
       goal({ id: 4, parentId: 2 }),
       goal({ id: 5, parentId: 4 }),
     ];
-    expect(descendantIds(goals, 1).sort((a, b) => a - b)).toEqual([
-      2, 3, 4, 5,
-    ]);
+    expect(descendantIds(goals, 1).sort((a, b) => a - b)).toEqual([2, 3, 4, 5]);
   });
 });
