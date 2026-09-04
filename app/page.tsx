@@ -15,6 +15,8 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleUserRound,
   Compass,
   Flag,
@@ -39,6 +41,7 @@ type Locale = 'uz' | 'en' | 'ru';
 type View = 'today' | 'life' | 'goals' | 'reviews' | 'settings';
 type Goal = {
   id: number;
+  parentId: number | null;
   area: number;
   title: string;
   progress: number;
@@ -126,6 +129,11 @@ const copy = {
     noGoals: 'Hozircha maqsad yo‘q',
     editGoal: 'Maqsadni boshqarish',
     progressLabel: 'Jarayon',
+    subgoals: 'kichik maqsad',
+    subgoalsTitle: 'Kichik maqsadlar',
+    addSubgoal: 'Kichik maqsad qo‘shish',
+    noSubgoals: 'Hozircha kichik maqsad yo‘q',
+    autoProgressHint: 'Kichik maqsadlar asosida hisoblangan',
     delete: 'O‘chirish',
     monthly: 'Oylik tahlil',
     win: 'Bu oyda eng yaxshi natijangiz nima bo‘ldi?',
@@ -219,6 +227,11 @@ const copy = {
     noGoals: 'No goals yet',
     editGoal: 'Manage goal',
     progressLabel: 'Progress',
+    subgoals: 'sub-goals',
+    subgoalsTitle: 'Sub-goals',
+    addSubgoal: 'Add sub-goal',
+    noSubgoals: 'No sub-goals yet',
+    autoProgressHint: 'Calculated from sub-goals',
     delete: 'Delete',
     monthly: 'Monthly review',
     win: 'What was your biggest win this month?',
@@ -311,6 +324,11 @@ const copy = {
     noGoals: 'Целей пока нет',
     editGoal: 'Управление целью',
     progressLabel: 'Прогресс',
+    subgoals: 'подцелей',
+    subgoalsTitle: 'Подцели',
+    addSubgoal: 'Добавить подцель',
+    noSubgoals: 'Пока нет подцелей',
+    autoProgressHint: 'Рассчитано на основе подцелей',
     delete: 'Удалить',
     monthly: 'Ежемесячный обзор',
     win: 'Каков ваш главный результат за месяц?',
@@ -391,6 +409,7 @@ const initialScores = [6, 7, 5, 8, 7, 6, 4, 7],
 const initialGoals: Goal[] = [
   {
     id: 1,
+    parentId: null,
     area: 1,
     title: 'Product rahbari bo‘lish',
     progress: 64,
@@ -399,6 +418,7 @@ const initialGoals: Goal[] = [
   },
   {
     id: 2,
+    parentId: null,
     area: 2,
     title: 'Moliyaviy zaxira yaratish',
     progress: 42,
@@ -407,13 +427,49 @@ const initialGoals: Goal[] = [
   },
   {
     id: 3,
+    parentId: null,
     area: 5,
     title: 'Ingliz tilida erkin gapirish',
     progress: 78,
     year: '2027',
     note: 'Har kuni 30 daqiqa faol mashq.',
   },
+  {
+    id: 4,
+    parentId: 3,
+    area: 5,
+    title: 'Har kuni 20 ta yangi so‘z yodlash',
+    progress: 85,
+    year: '2026',
+    note: 'Kundalik lug‘at mashqi.',
+  },
+  {
+    id: 5,
+    parentId: 3,
+    area: 5,
+    title: 'Haftada 3 marta suhbat klubi',
+    progress: 60,
+    year: '2026',
+    note: 'Amaliy gapirish mashqi.',
+  },
 ];
+function childrenOf(goals: Goal[], parentId: number) {
+  return goals.filter((g) => g.parentId === parentId);
+}
+function effectiveProgress(goal: Goal, goals: Goal[]): number {
+  const kids = childrenOf(goals, goal.id);
+  if (!kids.length) return goal.progress;
+  return Math.round(
+    kids.reduce((sum, k) => sum + effectiveProgress(k, goals), 0) /
+      kids.length,
+  );
+}
+function descendantIds(goals: Goal[], id: number): number[] {
+  return childrenOf(goals, id).flatMap((k) => [
+    k.id,
+    ...descendantIds(goals, k.id),
+  ]);
+}
 
 function LifeWheel({ labels, scores }: { labels: string[]; scores: number[] }) {
   const size = 310,
@@ -830,6 +886,7 @@ export default function Home() {
     [reviews, setReviews] = useState<Review[]>([]),
     [modal, setModal] = useState<'goal' | 'review' | 'profile' | null>(null),
     [selectedGoal, setSelectedGoal] = useState<number | null>(null),
+    [addGoalParentId, setAddGoalParentId] = useState<number | null>(null),
     [toast, setToast] = useState(''),
     [profile, setProfile] = useState({
       name: 'Aziz Karimov',
@@ -917,20 +974,23 @@ export default function Home() {
   function addGoal(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
-      title = String(f.get('title') ?? '').trim();
+      title = String(f.get('title') ?? '').trim(),
+      parent = goals.find((g) => g.id === addGoalParentId);
     if (!title) return;
     setGoals([
       ...goals,
       {
         id: Date.now(),
+        parentId: addGoalParentId,
         title,
-        area: Number(f.get('area')),
-        year: String(f.get('year')),
+        area: parent ? parent.area : Number(f.get('area')),
+        year: String(f.get('year') ?? parent?.year ?? ''),
         note: String(f.get('note') ?? ''),
         progress: 0,
       },
     ]);
     setModal(null);
+    setAddGoalParentId(null);
     notify(t.goalCreated);
   }
   function addReview(e: FormEvent<HTMLFormElement>) {
@@ -996,40 +1056,52 @@ export default function Home() {
       </div>
     </section>
   );
+  const rootGoals = goals.filter((g) => g.parentId === null);
   const GoalsGrid = ({ limit }: { limit?: number }) => (
     <div className="grid gap-4 md:grid-cols-3">
-      {goals.slice(0, limit).map((g) => (
-        <button
-          key={g.id}
-          onClick={() => setSelectedGoal(g.id)}
-          className="rounded-2xl border border-slate-100 bg-[#fbfcfb] p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <div className="flex justify-between">
-            <span
-              className="rounded-full px-2.5 py-1 text-[10px] font-bold"
-              style={{
-                background: `${colors[g.area]}18`,
-                color: colors[g.area],
-              }}
-            >
-              {labels[g.area]}
-            </span>
-            <span className="text-xs text-slate-400">{t.years}</span>
-          </div>
-          <h3 className="mt-4 min-h-12 font-heading font-bold">{g.title}</h3>
-          <div className="mt-5 flex justify-between text-xs">
-            <span>{g.year}</span>
-            <b>{g.progress}%</b>
-          </div>
-          <div className="mt-2 h-2 rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${g.progress}%`, background: colors[g.area] }}
-            />
-          </div>
-        </button>
-      ))}
-      {!goals.length && (
+      {rootGoals.slice(0, limit).map((g) => {
+        const progress = effectiveProgress(g, goals),
+          subCount = childrenOf(goals, g.id).length;
+        return (
+          <button
+            key={g.id}
+            onClick={() => setSelectedGoal(g.id)}
+            className="rounded-2xl border border-slate-100 bg-[#fbfcfb] p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex justify-between">
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-bold"
+                style={{
+                  background: `${colors[g.area]}18`,
+                  color: colors[g.area],
+                }}
+              >
+                {labels[g.area]}
+              </span>
+              <span className="text-xs text-slate-400">{t.years}</span>
+            </div>
+            <h3 className="mt-4 min-h-12 font-heading font-bold">
+              {g.title}
+            </h3>
+            {subCount > 0 && (
+              <p className="mt-1 text-xs text-slate-400">
+                {subCount} {t.subgoals}
+              </p>
+            )}
+            <div className="mt-5 flex justify-between text-xs">
+              <span>{g.year}</span>
+              <b>{progress}%</b>
+            </div>
+            <div className="mt-2 h-2 rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${progress}%`, background: colors[g.area] }}
+              />
+            </div>
+          </button>
+        );
+      })}
+      {!rootGoals.length && (
         <div className="col-span-full rounded-2xl border border-dashed p-10 text-center text-slate-400">
           {t.noGoals}
         </div>
@@ -1140,7 +1212,10 @@ export default function Home() {
                     <p className="mt-2 text-slate-500">{t.subtitle}</p>
                   </div>
                   <Button
-                    onClick={() => setModal('goal')}
+                    onClick={() => {
+                      setAddGoalParentId(null);
+                      setModal('goal');
+                    }}
                     className="bg-[#2f776a]"
                   >
                     <Plus />
@@ -1224,7 +1299,7 @@ export default function Home() {
                         {t.progress}
                       </h2>
                       <p className="text-xs text-slate-400">
-                        {goals.length} {t.goalCount}
+                        {rootGoals.length} {t.goalCount}
                       </p>
                     </div>
                     <button
@@ -1271,10 +1346,13 @@ export default function Home() {
                 <div className="flex justify-between">
                   <PageTitle
                     title={t.goals}
-                    subtitle={`${goals.length} ${t.goalCount}`}
+                    subtitle={`${rootGoals.length} ${t.goalCount}`}
                   />
                   <Button
-                    onClick={() => setModal('goal')}
+                    onClick={() => {
+                      setAddGoalParentId(null);
+                      setModal('goal');
+                    }}
                     className="bg-[#2f776a]"
                   >
                     <Plus />
@@ -1386,45 +1464,69 @@ export default function Home() {
           </div>
         </section>
       </div>
-      {modal === 'goal' && (
-        <Modal label={t.add} onClose={() => setModal(null)}>
-          <h2 className="font-heading text-2xl font-bold">{t.add}</h2>
-          <form onSubmit={addGoal} className="mt-6 space-y-4">
-            <Field label={t.title}>
-              <Input name="title" required autoFocus className="h-11" />
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label={t.area}>
-                <select
-                  name="area"
-                  className="h-11 w-full rounded-lg border px-3"
-                >
-                  {labels.map((l, i) => (
-                    <option value={i} key={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label={t.year}>
-                <Input
-                  name="year"
-                  type="number"
-                  defaultValue={2029}
-                  className="h-11"
-                />
-              </Field>
-            </div>
-            <Field label={t.motivation}>
-              <Textarea name="note" />
-            </Field>
-            <Button type="submit" className="w-full bg-[#2f776a]">
-              <Plus />
-              {t.create}
-            </Button>
-          </form>
-        </Modal>
-      )}
+      {modal === 'goal' &&
+        (() => {
+          const parentGoal = goals.find((g) => g.id === addGoalParentId),
+            modalTitle = parentGoal ? t.addSubgoal : t.add;
+          return (
+            <Modal label={modalTitle} onClose={() => setModal(null)}>
+              <h2 className="font-heading text-2xl font-bold">
+                {modalTitle}
+              </h2>
+              {parentGoal && (
+                <p className="mt-1 text-sm text-slate-500">
+                  {parentGoal.title}
+                </p>
+              )}
+              <form onSubmit={addGoal} className="mt-6 space-y-4">
+                <Field label={t.title}>
+                  <Input name="title" required autoFocus className="h-11" />
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  {parentGoal ? (
+                    <Field label={t.area}>
+                      <span
+                        className="flex h-11 items-center rounded-lg border px-3 text-sm font-semibold"
+                        style={{ color: colors[parentGoal.area] }}
+                      >
+                        {labels[parentGoal.area]}
+                      </span>
+                    </Field>
+                  ) : (
+                    <Field label={t.area}>
+                      <select
+                        name="area"
+                        defaultValue={weakest}
+                        className="h-11 w-full rounded-lg border px-3"
+                      >
+                        {labels.map((l, i) => (
+                          <option value={i} key={l}>
+                            {l}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+                  <Field label={t.year}>
+                    <Input
+                      name="year"
+                      type="number"
+                      defaultValue={parentGoal ? parentGoal.year : 2029}
+                      className="h-11"
+                    />
+                  </Field>
+                </div>
+                <Field label={t.motivation}>
+                  <Textarea name="note" />
+                </Field>
+                <Button type="submit" className="w-full bg-[#2f776a]">
+                  <Plus />
+                  {t.create}
+                </Button>
+              </form>
+            </Modal>
+          );
+        })()}
       {modal === 'review' && (
         <Modal label={t.monthly} onClose={() => setModal(null)}>
           <h2 className="font-heading text-2xl font-bold">{t.monthly}</h2>
@@ -1462,57 +1564,143 @@ export default function Home() {
           </Button>
         </Modal>
       )}
-      {currentGoal && (
-        <Modal label={t.editGoal} onClose={() => setSelectedGoal(null)}>
-          <h2 className="pr-10 font-heading text-2xl font-bold">
-            {currentGoal.title}
-          </h2>
-          <p className="mt-2 text-sm text-slate-500">{currentGoal.note}</p>
-          <div className="mt-7">
-            <span className="flex justify-between">
-              <b>{t.progressLabel}</b>
-              <b>{currentGoal.progress}%</b>
-            </span>
-            <ScoreSlider
-              ariaLabel={t.progressLabel}
-              min={0}
-              max={100}
-              step={5}
-              value={currentGoal.progress}
-              onChange={(v) =>
-                setGoals(
-                  goals.map((g) =>
-                    g.id === currentGoal.id ? { ...g, progress: v } : g,
-                  ),
-                )
-              }
-            />
-          </div>
-          <div className="mt-6 flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setGoals(goals.filter((g) => g.id !== currentGoal.id));
-                setSelectedGoal(null);
-              }}
-              className="text-red-600"
-            >
-              <Trash2 />
-              {t.delete}
-            </Button>
-            <Button
-              onClick={() => {
-                setSelectedGoal(null);
-                notify(t.saved);
-              }}
-              className="bg-[#2f776a]"
-            >
-              <Save />
-              {t.saved}
-            </Button>
-          </div>
-        </Modal>
-      )}
+      {currentGoal &&
+        (() => {
+          const parent = goals.find((g) => g.id === currentGoal.parentId),
+            subgoals = childrenOf(goals, currentGoal.id),
+            progress = effectiveProgress(currentGoal, goals);
+          return (
+            <Modal label={t.editGoal} onClose={() => setSelectedGoal(null)}>
+              {parent && (
+                <button
+                  onClick={() => setSelectedGoal(parent.id)}
+                  className="mb-3 flex items-center gap-1 text-sm font-semibold text-[#2f776a]"
+                >
+                  <ChevronLeft size={16} />
+                  {parent.title}
+                </button>
+              )}
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-bold"
+                style={{
+                  background: `${colors[currentGoal.area]}18`,
+                  color: colors[currentGoal.area],
+                }}
+              >
+                {labels[currentGoal.area]}
+              </span>
+              <h2 className="mt-3 pr-10 font-heading text-2xl font-bold">
+                {currentGoal.title}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {currentGoal.note}
+              </p>
+              <div className="mt-7">
+                <span className="flex justify-between">
+                  <b>{t.progressLabel}</b>
+                  <b>{progress}%</b>
+                </span>
+                {subgoals.length > 0 ? (
+                  <>
+                    <div className="mt-2 h-2 rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${progress}%`,
+                          background: colors[currentGoal.area],
+                        }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-400">
+                      {t.autoProgressHint}
+                    </p>
+                  </>
+                ) : (
+                  <ScoreSlider
+                    ariaLabel={t.progressLabel}
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={currentGoal.progress}
+                    onChange={(v) =>
+                      setGoals(
+                        goals.map((g) =>
+                          g.id === currentGoal.id ? { ...g, progress: v } : g,
+                        ),
+                      )
+                    }
+                  />
+                )}
+              </div>
+              <div className="mt-7">
+                <div className="flex items-center justify-between">
+                  <b className="text-sm">{t.subgoalsTitle}</b>
+                  <button
+                    onClick={() => {
+                      setAddGoalParentId(currentGoal.id);
+                      setSelectedGoal(null);
+                      setModal('goal');
+                    }}
+                    className="flex items-center gap-1 text-sm font-semibold text-[#2f776a]"
+                  >
+                    <Plus size={16} />
+                    {t.addSubgoal}
+                  </button>
+                </div>
+                {subgoals.length ? (
+                  <div className="mt-3 space-y-2">
+                    {subgoals.map((k) => (
+                      <button
+                        key={k.id}
+                        onClick={() => setSelectedGoal(k.id)}
+                        className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-[#fbfcfb] px-4 py-3 text-left hover:bg-slate-50"
+                      >
+                        <span className="text-sm font-semibold">
+                          {k.title}
+                        </span>
+                        <span className="flex items-center gap-2 text-xs text-slate-400">
+                          {effectiveProgress(k, goals)}%
+                          <ChevronRight size={16} />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-400">
+                    {t.noSubgoals}
+                  </p>
+                )}
+              </div>
+              <div className="mt-6 flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const toRemove = new Set([
+                      currentGoal.id,
+                      ...descendantIds(goals, currentGoal.id),
+                    ]);
+                    setGoals(goals.filter((g) => !toRemove.has(g.id)));
+                    setSelectedGoal(null);
+                  }}
+                  className="text-red-600"
+                >
+                  <Trash2 />
+                  {t.delete}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSelectedGoal(null);
+                    notify(t.saved);
+                  }}
+                  className="bg-[#2f776a]"
+                >
+                  <Save />
+                  {t.saved}
+                </Button>
+              </div>
+            </Modal>
+          );
+        })()}
       {toast && (
         <div className="fixed bottom-5 left-1/2 z-[90] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#193f38] px-5 py-3 text-sm font-semibold text-white">
           <CheckCircle2 size={17} />
