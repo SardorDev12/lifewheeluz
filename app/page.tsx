@@ -541,7 +541,7 @@ function WheelRide({
           }}
         />
         <div
-          className="absolute bottom-5 left-1/2 h-36 w-36 -translate-x-1/2"
+          className="absolute bottom-8 left-1/2 h-36 w-36 -translate-x-1/2"
           style={
             {
               '--bounce': `${bounce}px`,
@@ -564,8 +564,8 @@ function WheelRide({
             })}
             <polygon
               points={scores.map((v, i) => p(i, v).join(',')).join(' ')}
-              fill="#2f776a"
-              fillOpacity=".22"
+              fill="#8fc3b7"
+              fillOpacity=".9"
               stroke="#2f776a"
               strokeWidth="3"
               strokeLinejoin="round"
