@@ -9,6 +9,9 @@
       "environment": "preview",
       "node": "22.22.2",
       "pnpm": "10.33.0",
+      "env": {
+        "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
+      },
       "android": {
         "buildType": "apk"
       }
@@ -17,7 +20,10 @@
       "autoIncrement": true,
       "environment": "production",
       "node": "22.22.2",
-      "pnpm": "10.33.0"
+      "pnpm": "10.33.0",
+      "env": {
+        "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
+      }
     }
   },
   "submit": {
