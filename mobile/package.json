@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "babel-preset-expo": "57.0.10",
     "eas-cli": "23.2.0",
     "react-dom": "19.2.3",
     "typescript": "~6.0.3"
@@ -37,8 +38,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:preview": "eas build --profile preview",
-    "build:production": "eas build --profile production",
-    "eas-build-pre-install": "bash eas-build-pre-install.sh"
+    "build:production": "eas build --profile production"
   },
   "private": true
 }
