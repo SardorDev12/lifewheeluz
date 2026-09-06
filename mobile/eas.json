@@ -9,9 +9,9 @@
       "environment": "preview",
       "node": "22.22.2",
       "pnpm": "10.33.0",
-      "image": "latest",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
       }
     },
     "production": {
@@ -19,7 +19,9 @@
       "environment": "production",
       "node": "22.22.2",
       "pnpm": "10.33.0",
-      "image": "latest"
+      "android": {
+        "image": "latest"
+      }
     }
   },
   "submit": {
