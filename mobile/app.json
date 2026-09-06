@@ -24,10 +24,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "owner": "thesardordev12",
+    "owner": "sardordev12",
     "extra": {
       "eas": {
-        "projectId": "a7a977cb-3966-45de-8f8b-2b418b9b8bb9"
+        "projectId": "6b099598-1b75-4310-b1a3-54c1182e8215"
       }
     }
   }
