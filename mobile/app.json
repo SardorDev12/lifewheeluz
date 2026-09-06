@@ -23,6 +23,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "owner": "thesardordev12",
+    "extra": {
+      "eas": {
+        "projectId": "a7a977cb-3966-45de-8f8b-2b418b9b8bb9"
+      }
     }
   }
 }
