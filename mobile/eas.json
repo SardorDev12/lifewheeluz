@@ -9,6 +9,7 @@
       "environment": "preview",
       "node": "22.22.2",
       "pnpm": "10.33.0",
+      "image": "latest",
       "android": {
         "buildType": "apk"
       }
@@ -18,9 +19,7 @@
       "environment": "production",
       "node": "22.22.2",
       "pnpm": "10.33.0",
-      "env": {
-        "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
-      }
+      "image": "latest"
     }
   },
   "submit": {
